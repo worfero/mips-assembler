@@ -1,16 +1,25 @@
 #include <stdio.h>
 #include <string.h>
 
-//typedef struct {
-    //char mnemonic[4]; // opcode mnemonic
+#define R_TYPE     0    // R-TYPE instruction
+#define I_TYPE     1    // I-TYPE instruction
+#define J_TYPE     2    // J-TYPE instruction
 
-    //int numCode;
-//} Opcode;
+typedef struct {
+    char mnemonic[5]; // opcode mnemonic
+    int instType;
+    int numCode;      // opcode number
+} Opcode;
+
+static const Opcode opcodes[] =
+{
+    {"addi", I_TYPE, 8},
+    {"lw", I_TYPE, 35}
+};
 
 // defines a register structure
 typedef struct {
     char mnemonic[4]; // register mnemonic
-
     unsigned numCode; // register number code
 } Reg;
 
@@ -62,13 +71,16 @@ unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtFiel
 }
 
 void main() {
-    unsigned op = 8;
+    unsigned op;
     unsigned rs;
     unsigned rt;
     unsigned imm;
+    char opMne[5];
     char rsMne[4];
     char rtMne[4];
 
+    printf("Please input an instruction: ");
+    scanf("%5s", opMne);
     printf("Please input a rs register: ");
     scanf("%4s", rsMne);
     printf("Please input a rt register: ");
@@ -76,8 +88,13 @@ void main() {
     printf("Please input an immediate: ");
     scanf("%u", &imm);
 
-    for(int i = 0; i <= sizeof(registers); i++)
-    {
+    for(int i = 0; i <= sizeof(opcodes); i++){
+        if(!strcmp(opMne, opcodes[i].mnemonic)){
+            op = opcodes[i].numCode;
+        }
+    } 
+
+    for(int i = 0; i <= sizeof(registers); i++){
         if(!strcmp(rsMne, registers[i].mnemonic)){
             rs = registers[i].numCode;
         }
@@ -85,11 +102,5 @@ void main() {
             rt = registers[i].numCode;
         }
     }
-    printf("%u", rs);
-    printf("\n");
-    printf("%u", rt);
-    printf("\n");
-    printf("%u", imm);
-    printf("\n");
     printf("0x%04x", generateInstruction(op, rs, rt, imm));
 }
