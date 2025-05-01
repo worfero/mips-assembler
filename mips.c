@@ -70,37 +70,14 @@ unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtFiel
     return result;
 }
 
-void main() {
+int main() {
     unsigned op;
     unsigned rs;
     unsigned rt;
     unsigned imm;
-    char opMne[5];
-    char rsMne[4];
-    char rtMne[4];
 
-    printf("Please input an instruction: ");
-    scanf("%5s", opMne);
-    printf("Please input a rs register: ");
-    scanf("%4s", rsMne);
-    printf("Please input a rt register: ");
-    scanf("%4s", rtMne);
-    printf("Please input an immediate: ");
-    scanf("%u", &imm);
+    char msg[30];
 
-    for(int i = 0; i <= sizeof(opcodes); i++){
-        if(!strcmp(opMne, opcodes[i].mnemonic)){
-            op = opcodes[i].numCode;
-        }
-    } 
-
-    for(int i = 0; i <= sizeof(registers); i++){
-        if(!strcmp(rsMne, registers[i].mnemonic)){
-            rs = registers[i].numCode;
-        }
-        if(!strcmp(rtMne, registers[i].mnemonic)){
-            rt = registers[i].numCode;
-        }
-    }
-    printf("0x%04x", generateInstruction(op, rs, rt, imm));
+    fgets(msg, 30, stdin);
+    printf("%s", msg);
 }
