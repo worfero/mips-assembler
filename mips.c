@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define R_TYPE     0    // R-TYPE instruction
 #define I_TYPE     1    // I-TYPE instruction
@@ -75,9 +76,54 @@ int main() {
     unsigned rs;
     unsigned rt;
     unsigned imm;
+    int argCounter = 0;
+    char opMsg[30] = {NULL};
+    char rsMsg[30] = {NULL};
+    char rtMsg[30] = {NULL};
+    char immMsg[30] = {NULL};
 
-    char msg[30];
+    char msg[120];
 
-    fgets(msg, 30, stdin);
-    printf("%s", msg);
+    fgets(msg, sizeof(msg), stdin);
+
+    for(int i = 0; i < strlen(msg); i++){
+        if(msg[i] == ' '){
+            if(opMsg[0] == '\0'){
+                strncpy(opMsg, msg, i+1);
+                argCounter += strlen(opMsg);
+                printf("%s", opMsg);
+            }
+            else if(rsMsg[0] == '\0'){
+                strncpy(rsMsg, msg + argCounter, i+1 - argCounter);
+                argCounter += strlen(rsMsg);
+                printf("%s", rsMsg);
+            }
+            else if(rtMsg[0] == '\0'){
+                strncpy(rtMsg, msg + argCounter, i+1 - argCounter);
+                argCounter += strlen(rtMsg);
+                printf("%s", rtMsg);
+                if(immMsg[0] == '\0'){
+                    strncpy(immMsg, msg + argCounter, i+3 - argCounter);
+                    argCounter = 0;
+                    printf("%s", immMsg);
+                }
+            }
+        }
+    }
+
+    //for(int i = 0; i <= sizeof(opcodes); i++){
+    //    if(!strcmp(opMne, opcodes[i].mnemonic)){
+    //        op = opcodes[i].numCode;
+    //    }
+    //} 
+    //
+    //for(int i = 0; i <= sizeof(registers); i++){
+    //    if(!strcmp(rsMne, registers[i].mnemonic)){
+    //        rs = registers[i].numCode;
+    //    }
+    //    if(!strcmp(rtMne, registers[i].mnemonic)){
+    //        rt = registers[i].numCode;
+    //    }
+    //}
+    //printf("0x%04x", generateInstruction(op, rs, rt, imm));
 }
