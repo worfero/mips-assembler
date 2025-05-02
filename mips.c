@@ -93,15 +93,15 @@ int main() {
                 argCounter += strlen(opMsg);
                 printf("%s", opMsg);
             }
-            else if(rsMsg[0] == '\0'){
-                strncpy(rsMsg, msg + argCounter, i+1 - argCounter);
-                argCounter += strlen(rsMsg);
-                printf("%s", rsMsg);
-            }
             else if(rtMsg[0] == '\0'){
                 strncpy(rtMsg, msg + argCounter, i+1 - argCounter);
                 argCounter += strlen(rtMsg);
                 printf("%s", rtMsg);
+            }
+            else if(rsMsg[0] == '\0'){
+                strncpy(rsMsg, msg + argCounter, i+1 - argCounter);
+                argCounter += strlen(rsMsg);
+                printf("%s", rsMsg);
                 if(immMsg[0] == '\0'){
                     strncpy(immMsg, msg + argCounter, i+3 - argCounter);
                     argCounter = 0;
@@ -111,19 +111,19 @@ int main() {
         }
     }
 
-    //for(int i = 0; i <= sizeof(opcodes); i++){
-    //    if(!strcmp(opMne, opcodes[i].mnemonic)){
-    //        op = opcodes[i].numCode;
-    //    }
-    //} 
-    //
-    //for(int i = 0; i <= sizeof(registers); i++){
-    //    if(!strcmp(rsMne, registers[i].mnemonic)){
-    //        rs = registers[i].numCode;
-    //    }
-    //    if(!strcmp(rtMne, registers[i].mnemonic)){
-    //        rt = registers[i].numCode;
-    //    }
-    //}
-    //printf("0x%04x", generateInstruction(op, rs, rt, imm));
+    for(int i = 0; i <= sizeof(opcodes); i++){
+        if(!strcmp(opMsg, opcodes[i].mnemonic)){
+            op = opcodes[i].numCode;
+        }
+    } 
+    
+    for(int i = 0; i <= sizeof(registers); i++){
+        if(!strcmp(rtMsg, registers[i].mnemonic)){
+            rt = registers[i].numCode;
+        }
+        if(!strcmp(rsMsg, registers[i].mnemonic)){
+            rs = registers[i].numCode;
+        }
+    }
+    printf("0x%04x", generateInstruction(op, rs, rt, imm));
 }
