@@ -1,10 +1,15 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
-#define R_TYPE     0    // R-TYPE instruction
-#define I_TYPE     1    // I-TYPE instruction
-#define J_TYPE     2    // J-TYPE instruction
+#define NOT_INST   0        // Not an instruction
+#define R_TYPE     1        // R-TYPE instruction
+#define I_TYPE     2        // I-TYPE instruction
+#define J_TYPE     3        // J-TYPE instruction
+
+#define MAX_REG_NUM 31      // Maximum number of registers available
+#define MAX_OPCODE_NUM 56   // Maximum number of registers available
 
 typedef struct {
     char mnemonic[5]; // mnemonic
@@ -21,38 +26,38 @@ static const DataStructure opcodes[] =
 // saves the values of all registers available
 static const DataStructure registers[] =
 {
-    {"$0", 0, 0},     //the constant value 0
-    {"$at", 0, 1},    //assembler temporary
-    {"$v0", 0, 2},    //procedure return values
-    {"$v1", 0, 3},
-    {"$a0", 0, 4},    //procedure arguments
-    {"$a1", 0, 5},
-    {"$a2", 0, 6},
-    {"$a3", 0, 7},
-    {"$t0", 0, 8},    //temporary variables
-    {"$t1", 0, 9},
-    {"$t2", 0, 10},
-    {"$t3", 0, 11},
-    {"$t4", 0, 12},
-    {"$t5", 0, 13},
-    {"$t6", 0, 14},
-    {"$t7", 0, 15},
-    {"$s0", 0, 16},    //saved variables
-    {"$s1", 0, 17},
-    {"$s2", 0, 18},
-    {"$s3", 0, 19},
-    {"$s4", 0, 20},
-    {"$s5", 0, 21},
-    {"$s6", 0, 22},
-    {"$s7", 0, 23},
-    {"$t8", 0, 24},    //temporary variables
-    {"$t9", 0, 25},
-    {"$k0", 0, 26},    //operating system (OS) temporaries
-    {"$k1", 0, 27},
-    {"$gp", 0, 28},    //global pointer
-    {"$sp", 0, 29},    //stack pointer
-    {"$fp", 0, 30},    //frame pointer
-    {"$ra", 0, 31}     //procedure return address
+    {"$0", NOT_INST, 0},     //the constant value 0
+    {"$at", NOT_INST, 1},    //assembler temporary
+    {"$v0", NOT_INST, 2},    //procedure return values
+    {"$v1", NOT_INST, 3},
+    {"$a0", NOT_INST, 4},    //procedure arguments
+    {"$a1", NOT_INST, 5},
+    {"$a2", NOT_INST, 6},
+    {"$a3", NOT_INST, 7},
+    {"$t0", NOT_INST, 8},    //temporary variables
+    {"$t1", NOT_INST, 9},
+    {"$t2", NOT_INST, 10},
+    {"$t3", NOT_INST, 11},
+    {"$t4", NOT_INST, 12},
+    {"$t5", NOT_INST, 13},
+    {"$t6", NOT_INST, 14},
+    {"$t7", NOT_INST, 15},
+    {"$s0", NOT_INST, 16},    //saved variables
+    {"$s1", NOT_INST, 17},
+    {"$s2", NOT_INST, 18},
+    {"$s3", NOT_INST, 19},
+    {"$s4", NOT_INST, 20},
+    {"$s5", NOT_INST, 21},
+    {"$s6", NOT_INST, 22},
+    {"$s7", NOT_INST, 23},
+    {"$t8", NOT_INST, 24},    //temporary variables
+    {"$t9", NOT_INST, 25},
+    {"$k0", NOT_INST, 26},    //operating system (OS) temporaries
+    {"$k1", NOT_INST, 27},
+    {"$gp", NOT_INST, 28},    //global pointer
+    {"$sp", NOT_INST, 29},    //stack pointer
+    {"$fp", NOT_INST, 30},    //frame pointer
+    {"$ra", NOT_INST, 31}     //procedure return address
 };
 
 // generates a addi instruction based on input values
@@ -66,9 +71,12 @@ unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtFiel
 }
 
 int main() {
-    unsigned op = 0;
-    unsigned rs = 0;
-    unsigned rt = 0;
+    char zero[] = {'0'};
+    bool isError = false;
+
+    unsigned op = MAX_OPCODE_NUM + 1;
+    unsigned rs = MAX_REG_NUM + 1;
+    unsigned rt = MAX_REG_NUM + 1;
     unsigned imm = 0;
     int argCounter = 0;
     char opMsg[30] = {"\0"};
@@ -78,7 +86,7 @@ int main() {
 
     char msg[120];
 
-    printf("Please insert an instruction: ");
+    printf("\nPlease insert an instruction: ");
     fgets(msg, sizeof(msg), stdin);
     for(int i = 0; i < strlen(msg); i++){
         if(msg[i] == ' '){
@@ -94,7 +102,7 @@ int main() {
                 strncpy(rsMsg, msg + argCounter, i - argCounter);
                 argCounter += strlen(rsMsg) + 1;
                 if(immMsg[0] == '\0'){
-                    strncpy(immMsg, msg + argCounter, i+3 - argCounter);
+                    strncpy(immMsg, msg + argCounter, strlen(msg) - 1 - argCounter);
                     argCounter = 0;
                 }
             }
@@ -116,5 +124,25 @@ int main() {
         }
     }
     imm = strtol(immMsg, (char **)NULL, 10);
-    printf("0x%04x", generateInstruction(op, rs, rt, imm));
+
+    if(op < 0 || op > MAX_OPCODE_NUM){
+        printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMsg);
+        isError = true;
+    }
+    if(rt < 0 || rt > MAX_REG_NUM){
+        printf("\nERROR: Register \"%.20s\" not found. Try again\n", rtMsg);
+        isError = true;
+    }
+    if(rs < 0 || rs > MAX_REG_NUM){
+        printf("\nERROR: Register \"%.20s\" not found. Try again\n", rsMsg);
+        isError = true;
+    }
+    if((strcmp(immMsg, zero)) && imm == 0){
+        printf("\nERROR: Immediate \"%.20s\" not valid. Try Again\n", immMsg);
+        isError = true;
+    }
+
+    if(!isError){
+        printf("0x%04x", generateInstruction(op, rs, rt, imm));
+    }
 }
