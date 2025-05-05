@@ -76,6 +76,34 @@ static const Register registers[] =
     {"$ra", 31}     //procedure return address
 };
 
+void getOpcodeMsg(char *opMessage, char *message){
+    // parses the instruction message
+    for(int i = 0; i < strlen(message); i++){
+        // gets the op code as a string
+        if(opMessage[0] == '\0' && message[i] == ' '){
+            strncpy(opMessage, message, i);
+        }
+    }
+}
+
+void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, int *sa, int *funct, int *label, char *opMsg){
+    // searches for the opcode in the lookup table
+    for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
+        if(!strcmp(opMsg, opcodes[i].mnemonic)){
+            // gets the instruction code default parameters
+            *op = opcodes[i].numCode;
+            *type = opcodes[i].instType;
+            *rd = opcodes[i].rdField;
+            *rs = opcodes[i].rsField;
+            *rt = opcodes[i].rtField;
+            *imm = opcodes[i].immField;
+            *sa = opcodes[i].saField;
+            *funct = opcodes[i].functField;
+            *label = opcodes[i].labelField;
+        }
+    }
+}
+
 char * readFile() {
     char *text = malloc(20);
     FILE *file;
@@ -92,7 +120,7 @@ char * readFile() {
     return text;
 }
 
-// generates an addi instruction based on input values
+// generates an I-TYPE instruction based on input values
 unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtField, unsigned immField){
     unsigned result;
     opField = opField << 26; // bit shift for the opcode in the instruction
@@ -122,31 +150,14 @@ int main() {
     char rtMsg[30] = {"\0"};
     char immMsg[30] = {"\0"};
 
+    // reads the assembly code file
     char *msg = readFile();
 
-    // parses the instruction message
-    for(int i = 0; i < strlen(msg); i++){
-        // gets the op code as a string
-        if(opMsg[0] == '\0' && msg[i] == ' '){
-            strncpy(opMsg, msg, i);
-            argCounter += strlen(opMsg) + 1;
-            // searches for the opcode in the lookup table
-            for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
-                if(!strcmp(opMsg, opcodes[i].mnemonic)){
-                    // gets the instruction code default parameters
-                    op = opcodes[i].numCode;
-                    type = opcodes[i].instType;
-                    rd = opcodes[i].rdField;
-                    rs = opcodes[i].rsField;
-                    rt = opcodes[i].rtField;
-                    imm = opcodes[i].immField;
-                    sa = opcodes[i].saField;
-                    funct = opcodes[i].functField;
-                    label = opcodes[i].labelField;
-                }
-            }
-        }
-    }
+    getOpcodeMsg(opMsg, msg);
+    argCounter += strlen(opMsg) + 1;
+
+    getDefaultParams(&op, &type, &rd, &rs, &rt, &imm, &sa, &funct, &label, opMsg);
+
     if(type == I_TYPE){
         for(int i = 0; i < strlen(msg); i++){
             if(op >= 8 && op < 32){
@@ -160,7 +171,6 @@ int main() {
                     else if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
                         strncpy(rsMsg, msg + argCounter, i - argCounter);
                         argCounter += strlen(rsMsg) + 2;
-                        // gets the immediate as a string
                     }
                 }
                 if(i == strlen(msg) - 1){
