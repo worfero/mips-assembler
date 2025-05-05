@@ -87,7 +87,6 @@ int main() {
     char msg[120];
 
     FILE *file;
-    char buffer[1024];
 
     file = fopen("assembly.txt", "r");
     if (file == NULL) {
@@ -95,69 +94,65 @@ int main() {
         return 1;
     }
 
-    while (fgets(buffer, sizeof(buffer), file) != NULL) {
-        printf("%s", buffer);
-    }
+    fgets(msg, sizeof(msg), file);
 
     fclose(file);
 
-    //printf("\nPlease insert an instruction: ");
-    //fgets(msg, sizeof(msg), stdin);
-    //for(int i = 0; i < strlen(msg); i++){
-    //    if(msg[i] == ' '){
-    //        if(opMsg[0] == '\0'){
-    //            strncpy(opMsg, msg, i);
-    //            argCounter += strlen(opMsg) + 1;
-    //        }
-    //        else if(rtMsg[0] == '\0'){
-    //            strncpy(rtMsg, msg + argCounter, i - argCounter);
-    //            argCounter += strlen(rtMsg) + 1;
-    //        }
-    //        else if(rsMsg[0] == '\0'){
-    //            strncpy(rsMsg, msg + argCounter, i - argCounter);
-    //            argCounter += strlen(rsMsg) + 1;
-    //            if(immMsg[0] == '\0'){
-    //                strncpy(immMsg, msg + argCounter, strlen(msg) - 1 - argCounter);
-    //                argCounter = 0;
-    //            }
-    //        }
-    //    }
-    //}
+    for(int i = 0; i < strlen(msg); i++){
+        if(msg[i] == ' '){
+            if(opMsg[0] == '\0'){
+                strncpy(opMsg, msg, i);
+                argCounter += strlen(opMsg) + 1;
+            }
+            else if(rtMsg[0] == '\0'){
+                strncpy(rtMsg, msg + argCounter, i - argCounter);
+                argCounter += strlen(rtMsg) + 1;
+            }
+            else if(rsMsg[0] == '\0'){
+                strncpy(rsMsg, msg + argCounter, i - argCounter);
+                argCounter += strlen(rsMsg) + 1;
+                if(immMsg[0] == '\0'){
+                    strncpy(immMsg, msg + argCounter, strlen(msg) - argCounter);
+                    argCounter = 0;
+                }
+            }
+        }
+    }
 
-    //for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
-    //    if(!strcmp(opMsg, opcodes[i].mnemonic)){
-    //        op = opcodes[i].numCode;
-    //    }
-    //} 
-    //
-    //for(int i = 0; i <= sizeof(registers)/sizeof(registers[0]); i++){
-    //    if(!strcmp(rtMsg, registers[i].mnemonic)){
-    //        rt = registers[i].numCode;
-    //    }
-    //    if(!strcmp(rsMsg, registers[i].mnemonic)){
-    //        rs = registers[i].numCode;
-    //    }
-    //}
-    //imm = strtol(immMsg, (char **)NULL, 10);
-//
-    //if(op < 0 || op > MAX_OPCODE_NUM){
-    //    printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMsg);
-    //    isError = true;
-    //}
-    //if(rt < 0 || rt > MAX_REG_NUM){
-    //    printf("\nERROR: Register \"%.20s\" not found. Try again\n", rtMsg);
-    //    isError = true;
-    //}
-    //if(rs < 0 || rs > MAX_REG_NUM){
-    //    printf("\nERROR: Register \"%.20s\" not found. Try again\n", rsMsg);
-    //    isError = true;
-    //}
-    //if((strcmp(immMsg, zero)) && imm == 0){
-    //    printf("\nERROR: Immediate \"%.20s\" not valid. Try Again\n", immMsg);
-    //    isError = true;
-    //}
-//
-    //if(!isError){
-    //    printf("0x%04x", generateInstruction(op, rs, rt, imm));
-    //}
+    for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
+        if(!strcmp(opMsg, opcodes[i].mnemonic)){
+            op = opcodes[i].numCode;
+        }
+    } 
+    
+    for(int i = 0; i <= sizeof(registers)/sizeof(registers[0]); i++){
+        if(!strcmp(rtMsg, registers[i].mnemonic)){
+            rt = registers[i].numCode;
+        }
+        if(!strcmp(rsMsg, registers[i].mnemonic)){
+            rs = registers[i].numCode;
+        }
+    }
+    imm = strtol(immMsg, (char **)NULL, 10);
+
+    if(op < 0 || op > MAX_OPCODE_NUM){
+        printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMsg);
+        isError = true;
+    }
+    if(rt < 0 || rt > MAX_REG_NUM){
+        printf("\nERROR: Register \"%.20s\" not found. Try again\n", rtMsg);
+        isError = true;
+    }
+    if(rs < 0 || rs > MAX_REG_NUM){
+        printf("\nERROR: Register \"%.20s\" not found. Try again\n", rsMsg);
+        isError = true;
+    }
+    if((strcmp(immMsg, zero)) && imm == 0){
+        printf("\nERROR: Immediate \"%.20s\" not valid. Try Again\n", immMsg);
+        isError = true;
+    }
+
+    if(!isError){
+        printf("0x%04x", generateInstruction(op, rs, rt, imm));
+    }
 }
