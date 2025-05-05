@@ -76,7 +76,7 @@ char * readFile() {
     return text;
 }
 
-// generates a addi instruction based on input values
+// generates an addi instruction based on input values
 unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtField, unsigned immField){
     unsigned result;
     opField = opField << 26; // bit shift for the opcode in the instruction
@@ -90,6 +90,7 @@ int main() {
     char zero[] = {'0'};
     bool isError = false;
 
+    // declaring instruction variables
     unsigned op = MAX_OPCODE_NUM + 1;
     unsigned rs = MAX_REG_NUM + 1;
     unsigned rt = MAX_REG_NUM + 1;
@@ -102,34 +103,61 @@ int main() {
 
     char *msg = readFile();
 
+    // parses the instruction message
     for(int i = 0; i < strlen(msg); i++){
-        if(msg[i] == ' '){
-            if(opMsg[0] == '\0'){
-                strncpy(opMsg, msg, i);
-                argCounter += strlen(opMsg) + 1;
+        // gets the op code as a string
+        if(opMsg[0] == '\0' && msg[i] == ' '){
+            strncpy(opMsg, msg, i);
+            argCounter += strlen(opMsg) + 1;
+            printf("%s\n", opMsg);
+            // searches for the opcode in the lookup table
+            for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
+                if(!strcmp(opMsg, opcodes[i].mnemonic)){
+                    // gets the opcode numeric value
+                    op = opcodes[i].numCode;
+                }
             }
-            else if(rtMsg[0] == '\0'){
+        }
+        // gets the arguments
+        if(op >= 8 && op < 32){
+            if(msg[i] == ','){
+                // gets the rt register as a string
+                if(rtMsg[0] == '\0'){
+                    strncpy(rtMsg, msg + argCounter, i - argCounter);
+                    argCounter += strlen(rtMsg) + 2;
+                }
+                // gets the rs register as a string
+                else if(rsMsg[0] == '\0'){
+                    strncpy(rsMsg, msg + argCounter, i - argCounter);
+                    argCounter += strlen(rsMsg) + 2;
+                    // gets the immediate as a string
+                    if(immMsg[0] == '\0'){
+                        strncpy(immMsg, msg + argCounter, strlen(msg) - argCounter);
+                        argCounter = 0;
+                    }
+                }
+            }
+        }
+        else{
+            if(rtMsg[0] == '\0' && msg[i] == ','){
                 strncpy(rtMsg, msg + argCounter, i - argCounter);
-                argCounter += strlen(rtMsg) + 1;
+                argCounter += strlen(rtMsg) + 2;
+                printf("%s\n", rtMsg);
             }
-            else if(rsMsg[0] == '\0'){
-                strncpy(rsMsg, msg + argCounter, i - argCounter);
-                argCounter += strlen(rsMsg) + 1;
-                if(immMsg[0] == '\0'){
-                    strncpy(immMsg, msg + argCounter, strlen(msg) - argCounter);
+            else if(immMsg[0] == '\0' && msg[i] == '('){
+                strncpy(immMsg, msg + argCounter, i - argCounter);
+                argCounter += strlen(immMsg) + 1;
+                printf("%s\n", immMsg);
+                if(rsMsg[0] == '\0'){
+                    strncpy(rsMsg, msg + argCounter, strlen(msg) - argCounter - 1);
                     argCounter = 0;
+                    printf("%s\n", rsMsg);
                 }
             }
         }
     }
 
     free(msg);
-
-    for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
-        if(!strcmp(opMsg, opcodes[i].mnemonic)){
-            op = opcodes[i].numCode;
-        }
-    } 
     
     for(int i = 0; i <= sizeof(registers)/sizeof(registers[0]); i++){
         if(!strcmp(rtMsg, registers[i].mnemonic)){
