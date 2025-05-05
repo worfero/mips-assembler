@@ -29,7 +29,8 @@ typedef struct {
 static const Opcode opcodes[] =
 {
     {"addi", I_TYPE, 8, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A},
-    {"lw", I_TYPE, 35, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A}
+    {"lw", I_TYPE, 35, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A},
+    {"lui", I_TYPE, 15, N_A, N_A, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A}
 };
 
 // defining register structure
@@ -106,10 +107,15 @@ int main() {
     bool isError = false;
 
     // declaring instruction variables
-    unsigned op = MAX_OPCODE_NUM + 1;
-    unsigned rs = MAX_REG_NUM + 1;
-    unsigned rt = MAX_REG_NUM + 1;
-    unsigned imm = 0;
+    int type;
+    int op;
+    int rd;
+    int rs;
+    int rt;
+    int imm = 0;
+    int sa;
+    int funct;
+    int label;
     int argCounter = 0;
     char opMsg[30] = {"\0"};
     char rsMsg[30] = {"\0"};
@@ -118,55 +124,68 @@ int main() {
 
     char *msg = readFile();
 
-    //// parses the instruction message
-    //for(int i = 0; i < strlen(msg); i++){
-    //    // gets the op code as a string
-    //    if(opMsg[0] == '\0' && msg[i] == ' '){
-    //        strncpy(opMsg, msg, i);
-    //        argCounter += strlen(opMsg) + 1;
-    //        // searches for the opcode in the lookup table
-    //        for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
-    //            if(!strcmp(opMsg, opcodes[i].mnemonic)){
-    //                // gets the opcode numeric value
-    //                op = opcodes[i].numCode;
-    //            }
-    //        }
-    //    }
-    //    // gets the arguments
-    //    else if(op >= 8 && op < 32){
-    //        if(msg[i] == ','){
-    //            // gets the rt register as a string
-    //            if(rtMsg[0] == '\0'){
-    //                strncpy(rtMsg, msg + argCounter, i - argCounter);
-    //                argCounter += strlen(rtMsg) + 2;
-    //            }
-    //            // gets the rs register as a string
-    //            else if(rsMsg[0] == '\0'){
-    //                strncpy(rsMsg, msg + argCounter, i - argCounter);
-    //                argCounter += strlen(rsMsg) + 2;
-    //                // gets the immediate as a string
-    //                if(immMsg[0] == '\0'){
-    //                    strncpy(immMsg, msg + argCounter, strlen(msg) - argCounter);
-    //                    argCounter = 0;
-    //                }
-    //            }
-    //        }
-    //    }
-    //    else if(op > 32){
-    //        if(rtMsg[0] == '\0' && msg[i] == ','){
-    //            strncpy(rtMsg, msg + argCounter, i - argCounter);
-    //            argCounter += strlen(rtMsg) + 2;
-    //        }
-    //        else if(immMsg[0] == '\0' && msg[i] == '('){
-    //            strncpy(immMsg, msg + argCounter, i - argCounter);
-    //            argCounter += strlen(immMsg) + 1;
-    //            if(rsMsg[0] == '\0'){
-    //                strncpy(rsMsg, msg + argCounter, strlen(msg) - argCounter - 1);
-    //                argCounter = 0;
-    //            }
-    //        }
-    //    }
-    //}
+    // parses the instruction message
+    for(int i = 0; i < strlen(msg); i++){
+        // gets the op code as a string
+        if(opMsg[0] == '\0' && msg[i] == ' '){
+            strncpy(opMsg, msg, i);
+            argCounter += strlen(opMsg) + 1;
+            // searches for the opcode in the lookup table
+            for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
+                if(!strcmp(opMsg, opcodes[i].mnemonic)){
+                    // gets the instruction code default parameters
+                    op = opcodes[i].numCode;
+                    type = opcodes[i].instType;
+                    rd = opcodes[i].rdField;
+                    rs = opcodes[i].rsField;
+                    rt = opcodes[i].rtField;
+                    imm = opcodes[i].immField;
+                    sa = opcodes[i].saField;
+                    funct = opcodes[i].functField;
+                    label = opcodes[i].labelField;
+                }
+            }
+        }
+    }
+    if(type == I_TYPE){
+        for(int i = 0; i < strlen(msg); i++){
+            if(op >= 8 && op < 32){
+                if(msg[i] == ','){
+                    // gets the rt register as a string
+                    if(rt == INPUT_FIELD && rtMsg[0] == '\0'){
+                        strncpy(rtMsg, msg + argCounter, i - argCounter);
+                        argCounter += strlen(rtMsg) + 2;
+                    }
+                    // gets the rs register as a string
+                    else if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
+                        strncpy(rsMsg, msg + argCounter, i - argCounter);
+                        argCounter += strlen(rsMsg) + 2;
+                        // gets the immediate as a string
+                    }
+                }
+                if(i == strlen(msg) - 1){
+                    if(imm == INPUT_FIELD && immMsg[0] == '\0'){
+                        strncpy(immMsg, msg + argCounter, strlen(msg) - argCounter);
+                        argCounter = 0;
+                    }
+                }
+            }
+            else if(op > 32){
+                if(rtMsg[0] == '\0' && msg[i] == ','){
+                    strncpy(rtMsg, msg + argCounter, i - argCounter);
+                    argCounter += strlen(rtMsg) + 2;
+                }
+                else if(immMsg[0] == '\0' && msg[i] == '('){
+                    strncpy(immMsg, msg + argCounter, i - argCounter);
+                    argCounter += strlen(immMsg) + 1;
+                    if(rsMsg[0] == '\0'){
+                        strncpy(rsMsg, msg + argCounter, strlen(msg) - argCounter - 1);
+                        argCounter = 0;
+                    }
+                }
+            }
+        }
+    }
 
     free(msg);
     
@@ -180,22 +199,22 @@ int main() {
     }
     imm = strtol(immMsg, (char **)NULL, 10);
 
-    if(op < 0 || op > MAX_OPCODE_NUM){
-        printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMsg);
-        isError = true;
-    }
-    if(rt < 0 || rt > MAX_REG_NUM){
-        printf("\nERROR: Register \"%.20s\" not found. Try again\n", rtMsg);
-        isError = true;
-    }
-    if(rs < 0 || rs > MAX_REG_NUM){
-        printf("\nERROR: Register \"%.20s\" not found. Try again\n", rsMsg);
-        isError = true;
-    }
-    if((strcmp(immMsg, zero)) && imm == 0){
-        printf("\nERROR: Immediate \"%.20s\" not valid. Try Again\n", immMsg);
-        isError = true;
-    }
+    //if(op < 0 || op > MAX_OPCODE_NUM){
+    //    printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMsg);
+    //    isError = true;
+    //}
+    //if(rt < 0 || rt > MAX_REG_NUM){
+    //    printf("\nERROR: Register \"%.20s\" not found. Try again\n", rtMsg);
+    //    isError = true;
+    //}
+    //if(rs < 0 || rs > MAX_REG_NUM){
+    //    printf("\nERROR: Register \"%.20s\" not found. Try again\n", rsMsg);
+    //    isError = true;
+    //}
+    //if((strcmp(immMsg, zero)) && imm == 0){
+    //    printf("\nERROR: Immediate \"%.20s\" not valid. Try Again\n", immMsg);
+    //    isError = true;
+    //}
 
     if(!isError){
         printf("0x%04x", generateInstruction(op, rs, rt, imm));
