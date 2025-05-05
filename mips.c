@@ -60,6 +60,22 @@ static const DataStructure registers[] =
     {"$ra", NOT_INST, 31}     //procedure return address
 };
 
+char * readFile() {
+    char *text = malloc(20);
+    FILE *file;
+
+    file = fopen("assembly.txt", "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return '\0';
+    }
+
+    fgets(text, 20, file);
+    fclose(file);
+
+    return text;
+}
+
 // generates a addi instruction based on input values
 unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtField, unsigned immField){
     unsigned result;
@@ -84,19 +100,7 @@ int main() {
     char rtMsg[30] = {"\0"};
     char immMsg[30] = {"\0"};
 
-    char msg[120];
-
-    FILE *file;
-
-    file = fopen("assembly.txt", "r");
-    if (file == NULL) {
-        perror("Error opening file");
-        return 1;
-    }
-
-    fgets(msg, sizeof(msg), file);
-
-    fclose(file);
+    char *msg = readFile();
 
     for(int i = 0; i < strlen(msg); i++){
         if(msg[i] == ' '){
@@ -118,6 +122,8 @@ int main() {
             }
         }
     }
+
+    free(msg);
 
     for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
         if(!strcmp(opMsg, opcodes[i].mnemonic)){
