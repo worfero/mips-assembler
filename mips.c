@@ -3,61 +3,76 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define NOT_INST   0        // Not an instruction
-#define R_TYPE     1        // R-TYPE instruction
-#define I_TYPE     2        // I-TYPE instruction
-#define J_TYPE     3        // J-TYPE instruction
+#define R_TYPE          1        // R-TYPE instruction
+#define I_TYPE          2        // I-TYPE instruction
+#define J_TYPE          3        // J-TYPE instruction
+#define N_A             0        // field not applicable
+#define INPUT_FIELD     -1       // input field
 
 #define MAX_REG_NUM 31      // Maximum number of registers available
 #define MAX_OPCODE_NUM 56   // Maximum number of registers available
 
+// defining instruction code bit fields
 typedef struct {
-    char mnemonic[5]; // mnemonic
-    int instType;
-    unsigned numCode; // opcode number
-} DataStructure;
+    char mnemonic[7]; // mnemonic
+    int instType; // instruction type
+    int numCode; // opcode number
+    int rdField; // rd register
+    int rsField; // rs register
+    int rtField; // rt register
+    int immField; // immediate
+    int saField; // shamt
+    int functField; // function code
+    int labelField; // label
+} Opcode;
 
-static const DataStructure opcodes[] =
+static const Opcode opcodes[] =
 {
-    {"addi", I_TYPE, 8},
-    {"lw", I_TYPE, 35}
+    {"addi", I_TYPE, 8, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A},
+    {"lw", I_TYPE, 35, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A}
 };
 
+// defining register structure
+typedef struct {
+    char mnemonic[5]; // mnemonic
+    unsigned numCode; // opcode number
+} Register;
+
 // saves the values of all registers available
-static const DataStructure registers[] =
+static const Register registers[] =
 {
-    {"$0", NOT_INST, 0},     //the constant value 0
-    {"$at", NOT_INST, 1},    //assembler temporary
-    {"$v0", NOT_INST, 2},    //procedure return values
-    {"$v1", NOT_INST, 3},
-    {"$a0", NOT_INST, 4},    //procedure arguments
-    {"$a1", NOT_INST, 5},
-    {"$a2", NOT_INST, 6},
-    {"$a3", NOT_INST, 7},
-    {"$t0", NOT_INST, 8},    //temporary variables
-    {"$t1", NOT_INST, 9},
-    {"$t2", NOT_INST, 10},
-    {"$t3", NOT_INST, 11},
-    {"$t4", NOT_INST, 12},
-    {"$t5", NOT_INST, 13},
-    {"$t6", NOT_INST, 14},
-    {"$t7", NOT_INST, 15},
-    {"$s0", NOT_INST, 16},    //saved variables
-    {"$s1", NOT_INST, 17},
-    {"$s2", NOT_INST, 18},
-    {"$s3", NOT_INST, 19},
-    {"$s4", NOT_INST, 20},
-    {"$s5", NOT_INST, 21},
-    {"$s6", NOT_INST, 22},
-    {"$s7", NOT_INST, 23},
-    {"$t8", NOT_INST, 24},    //temporary variables
-    {"$t9", NOT_INST, 25},
-    {"$k0", NOT_INST, 26},    //operating system (OS) temporaries
-    {"$k1", NOT_INST, 27},
-    {"$gp", NOT_INST, 28},    //global pointer
-    {"$sp", NOT_INST, 29},    //stack pointer
-    {"$fp", NOT_INST, 30},    //frame pointer
-    {"$ra", NOT_INST, 31}     //procedure return address
+    {"$0", 0},     //the constant value 0
+    {"$at", 1},    //assembler temporary
+    {"$v0", 2},    //procedure return values
+    {"$v1", 3},
+    {"$a0", 4},    //procedure arguments
+    {"$a1", 5},
+    {"$a2", 6},
+    {"$a3", 7},
+    {"$t0", 8},    //temporary variables
+    {"$t1", 9},
+    {"$t2", 10},
+    {"$t3", 11},
+    {"$t4", 12},
+    {"$t5", 13},
+    {"$t6", 14},
+    {"$t7", 15},
+    {"$s0", 16},    //saved variables
+    {"$s1", 17},
+    {"$s2", 18},
+    {"$s3", 19},
+    {"$s4", 20},
+    {"$s5", 21},
+    {"$s6", 22},
+    {"$s7", 23},
+    {"$t8", 24},    //temporary variables
+    {"$t9", 25},
+    {"$k0", 26},    //operating system (OS) temporaries
+    {"$k1", 27},
+    {"$gp", 28},    //global pointer
+    {"$sp", 29},    //stack pointer
+    {"$fp", 30},    //frame pointer
+    {"$ra", 31}     //procedure return address
 };
 
 char * readFile() {
@@ -103,59 +118,55 @@ int main() {
 
     char *msg = readFile();
 
-    // parses the instruction message
-    for(int i = 0; i < strlen(msg); i++){
-        // gets the op code as a string
-        if(opMsg[0] == '\0' && msg[i] == ' '){
-            strncpy(opMsg, msg, i);
-            argCounter += strlen(opMsg) + 1;
-            printf("%s\n", opMsg);
-            // searches for the opcode in the lookup table
-            for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
-                if(!strcmp(opMsg, opcodes[i].mnemonic)){
-                    // gets the opcode numeric value
-                    op = opcodes[i].numCode;
-                }
-            }
-        }
-        // gets the arguments
-        if(op >= 8 && op < 32){
-            if(msg[i] == ','){
-                // gets the rt register as a string
-                if(rtMsg[0] == '\0'){
-                    strncpy(rtMsg, msg + argCounter, i - argCounter);
-                    argCounter += strlen(rtMsg) + 2;
-                }
-                // gets the rs register as a string
-                else if(rsMsg[0] == '\0'){
-                    strncpy(rsMsg, msg + argCounter, i - argCounter);
-                    argCounter += strlen(rsMsg) + 2;
-                    // gets the immediate as a string
-                    if(immMsg[0] == '\0'){
-                        strncpy(immMsg, msg + argCounter, strlen(msg) - argCounter);
-                        argCounter = 0;
-                    }
-                }
-            }
-        }
-        else{
-            if(rtMsg[0] == '\0' && msg[i] == ','){
-                strncpy(rtMsg, msg + argCounter, i - argCounter);
-                argCounter += strlen(rtMsg) + 2;
-                printf("%s\n", rtMsg);
-            }
-            else if(immMsg[0] == '\0' && msg[i] == '('){
-                strncpy(immMsg, msg + argCounter, i - argCounter);
-                argCounter += strlen(immMsg) + 1;
-                printf("%s\n", immMsg);
-                if(rsMsg[0] == '\0'){
-                    strncpy(rsMsg, msg + argCounter, strlen(msg) - argCounter - 1);
-                    argCounter = 0;
-                    printf("%s\n", rsMsg);
-                }
-            }
-        }
-    }
+    //// parses the instruction message
+    //for(int i = 0; i < strlen(msg); i++){
+    //    // gets the op code as a string
+    //    if(opMsg[0] == '\0' && msg[i] == ' '){
+    //        strncpy(opMsg, msg, i);
+    //        argCounter += strlen(opMsg) + 1;
+    //        // searches for the opcode in the lookup table
+    //        for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
+    //            if(!strcmp(opMsg, opcodes[i].mnemonic)){
+    //                // gets the opcode numeric value
+    //                op = opcodes[i].numCode;
+    //            }
+    //        }
+    //    }
+    //    // gets the arguments
+    //    else if(op >= 8 && op < 32){
+    //        if(msg[i] == ','){
+    //            // gets the rt register as a string
+    //            if(rtMsg[0] == '\0'){
+    //                strncpy(rtMsg, msg + argCounter, i - argCounter);
+    //                argCounter += strlen(rtMsg) + 2;
+    //            }
+    //            // gets the rs register as a string
+    //            else if(rsMsg[0] == '\0'){
+    //                strncpy(rsMsg, msg + argCounter, i - argCounter);
+    //                argCounter += strlen(rsMsg) + 2;
+    //                // gets the immediate as a string
+    //                if(immMsg[0] == '\0'){
+    //                    strncpy(immMsg, msg + argCounter, strlen(msg) - argCounter);
+    //                    argCounter = 0;
+    //                }
+    //            }
+    //        }
+    //    }
+    //    else if(op > 32){
+    //        if(rtMsg[0] == '\0' && msg[i] == ','){
+    //            strncpy(rtMsg, msg + argCounter, i - argCounter);
+    //            argCounter += strlen(rtMsg) + 2;
+    //        }
+    //        else if(immMsg[0] == '\0' && msg[i] == '('){
+    //            strncpy(immMsg, msg + argCounter, i - argCounter);
+    //            argCounter += strlen(immMsg) + 1;
+    //            if(rsMsg[0] == '\0'){
+    //                strncpy(rsMsg, msg + argCounter, strlen(msg) - argCounter - 1);
+    //                argCounter = 0;
+    //            }
+    //        }
+    //    }
+    //}
 
     free(msg);
     
