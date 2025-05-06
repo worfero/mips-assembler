@@ -9,8 +9,11 @@
 #define N_A             0        // field not applicable
 #define INPUT_FIELD     -1       // input field
 
-#define MAX_REG_NUM 31      // Maximum number of registers available
-#define MAX_OPCODE_NUM 56   // Maximum number of registers available
+#define MAX_REG_NUM     31       // Maximum number of registers available
+#define MAX_OPCODE_NUM  56       // Maximum number of registers available
+
+#define BUF_SIZE_FILE   65536    // Maximum buffer for a file
+#define BUF_SIZE_LINE   20       // Maximum buffer for a line
 
 // defining instruction code bit fields
 typedef struct {
@@ -97,20 +100,57 @@ static const Register registers[] =
     {"$ra", 31}     //procedure return address
 };
 
-char * readFile() {
-    char *text = malloc(20);
-    FILE *file;
+int countLines(FILE* file)
+{
+    char buf[BUF_SIZE_FILE];
+    int counter = 0;
+    for(;;)
+    {
+        size_t res = fread(buf, 1, BUF_SIZE_FILE, file);
+        if(ferror(file))
+            return -1;
 
+        int i;
+        for(i = 0; i < res; i++)
+            if (buf[i] == '\n')
+                counter++;
+
+        if(feof(file))
+            break;
+    }
+    counter++;
+    return counter;
+}
+
+char * readFile() {
+    FILE *file;
+    
     file = fopen("assembly.asm", "r");
-    if (file == NULL) {
+    if(file == NULL) {
         perror("Error opening file");
         return '\0';
     }
 
-    fgets(text, 20, file);
+    int numberOfLines = countLines(file);
+    
+    rewind(file);
+
+    char **lines = malloc(numberOfLines * sizeof(char*));
+    for(int i = 0; i < numberOfLines; i++){
+        lines[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
+    }
+
+    for(int i = 0; i < numberOfLines; i++){
+        fgets(lines[i], 20, file);
+        // removes newline from the string
+        lines[i][strcspn(lines[i], "\n")] = 0;
+        printf("%s\n", lines[i]);
+    }
+
+    //fgets(text, 20, file);
     fclose(file);
 
-    return text;
+    return lines[1];
 }
 
 int getRegister(char *regMne){
