@@ -6,7 +6,7 @@
 #define R_TYPE          1        // R-TYPE instruction
 #define I_TYPE          2        // I-TYPE instruction
 #define J_TYPE          3        // J-TYPE instruction
-#define N_A             0       // field not applicable
+#define N_A             0        // field not applicable
 #define INPUT_FIELD     -1       // input field
 
 #define MAX_REG_NUM 31      // Maximum number of registers available
@@ -25,13 +25,33 @@ typedef struct {
     int functField; // function code
 } Opcode;
 
+// lookup table for opcodes
 static const Opcode opcodes[] =
 {
     {"bgez", I_TYPE, 1, N_A, INPUT_FIELD, 1, INPUT_FIELD, N_A, N_A},
+    {"bltz", I_TYPE, 1, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
+    {"bne", I_TYPE, 5, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"blez", I_TYPE, 6, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
+    {"bgtz", I_TYPE, 7, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
     {"beq", I_TYPE, 4, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
     {"addi", I_TYPE, 8, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"addiu", I_TYPE, 9, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"slti", I_TYPE, 10, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"sltiu", I_TYPE, 11, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"andi", I_TYPE, 12, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"ori", I_TYPE, 13, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"xori", I_TYPE, 14, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"lui", I_TYPE, 15, N_A, 0, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"lb", I_TYPE, 32, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"lh", I_TYPE, 33, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
     {"lw", I_TYPE, 35, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lui", I_TYPE, 15, N_A, N_A, INPUT_FIELD, INPUT_FIELD, N_A, N_A}
+    {"lbu", I_TYPE, 36, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"lhu", I_TYPE, 37, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"sb", I_TYPE, 40, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"sh", I_TYPE, 41, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"sw", I_TYPE, 43, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"lwcl", I_TYPE, 49, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"swcl", I_TYPE, 56, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
 };
 
 // defining register structure
@@ -151,13 +171,13 @@ void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
             }
             else{
                 sscanf(msg, "%s %[^,], %d", opMne, rtMne, imm);
-                *rs = getRegister(rsMne);
+                *rt = getRegister(rtMne);
             }
         }
     }
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
     else if(op >= 32){
-        sscanf(msg, "%s %[^,], %d[^(]( %[^)])", opMne, rtMne, imm, rsMne);
+        sscanf(msg, "%s %[^,], %d(%[^)])", opMne, rtMne, imm, rsMne);
         *rt = getRegister(rtMne);
         *rs = getRegister(rsMne);
     }
@@ -183,7 +203,7 @@ int main() {
     int rd;
     int rs;
     int rt;
-    int imm = 0;
+    int imm;
     int sa;
     int funct;
     int label;
