@@ -213,22 +213,22 @@ int main() {
     }
     imm = strtol(immMsg, (char **)NULL, 10);
 
-    //if(op < 0 || op > MAX_OPCODE_NUM){
-    //    printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMsg);
-    //    isError = true;
-    //}
-    //if(rt < 0 || rt > MAX_REG_NUM){
-    //    printf("\nERROR: Register \"%.20s\" not found. Try again\n", rtMsg);
-    //    isError = true;
-    //}
-    //if(rs < 0 || rs > MAX_REG_NUM){
-    //    printf("\nERROR: Register \"%.20s\" not found. Try again\n", rsMsg);
-    //    isError = true;
-    //}
-    //if((strcmp(immMsg, zero)) && imm == 0){
-    //    printf("\nERROR: Immediate \"%.20s\" not valid. Try Again\n", immMsg);
-    //    isError = true;
-    //}
+    if(op < 0 || op > MAX_OPCODE_NUM){
+        printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMsg);
+        isError = true;
+    }
+    if(rt < 0 || rt > MAX_REG_NUM){
+        printf("\nERROR: Register \"%.20s\" not found. Try again\n", rtMsg);
+        isError = true;
+    }
+    if(rs < 0 || rs > MAX_REG_NUM){
+        printf("\nERROR: Register \"%.20s\" not found. Try again\n", rsMsg);
+        isError = true;
+    }
+    if((strcmp(immMsg, zero)) && imm == 0){
+        printf("\nERROR: Immediate \"%.20s\" not valid. Try Again\n", immMsg);
+        isError = true;
+    }
 
     if(!isError){
         printf("0x%04x", generateInstruction(op, rs, rt, imm));
