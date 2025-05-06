@@ -1,61 +1,165 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
-#define R_TYPE     0    // R-TYPE instruction
-#define I_TYPE     1    // I-TYPE instruction
-#define J_TYPE     2    // J-TYPE instruction
+#define R_TYPE          1        // R-TYPE instruction
+#define I_TYPE          2        // I-TYPE instruction
+#define J_TYPE          3        // J-TYPE instruction
+#define N_A             0        // field not applicable
+#define INPUT_FIELD     -1       // input field
 
+#define MAX_REG_NUM 31      // Maximum number of registers available
+#define MAX_OPCODE_NUM 56   // Maximum number of registers available
+
+// defining instruction code bit fields
+typedef struct {
+    char mnemonic[7]; // mnemonic
+    int instType; // instruction type
+    int numCode; // opcode number
+    int rdField; // rd register
+    int rsField; // rs register
+    int rtField; // rt register
+    int immField; // immediate
+    int saField; // shamt
+    int functField; // function code
+    int labelField; // label
+} Opcode;
+
+static const Opcode opcodes[] =
+{
+    {"addi", I_TYPE, 8, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A},
+    {"lw", I_TYPE, 35, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A},
+    {"lui", I_TYPE, 15, N_A, N_A, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A}
+};
+
+// defining register structure
 typedef struct {
     char mnemonic[5]; // mnemonic
-    int instType;
     unsigned numCode; // opcode number
-} DataStructure;
-
-static const DataStructure opcodes[] =
-{
-    {"addi", I_TYPE, 8},
-    {"lw", I_TYPE, 35}
-};
+} Register;
 
 // saves the values of all registers available
-static const DataStructure registers[] =
+static const Register registers[] =
 {
-    {"$0", 0, 0},     //the constant value 0
-    {"$at", 0, 1},    //assembler temporary
-    {"$v0", 0, 2},    //procedure return values
-    {"$v1", 0, 3},
-    {"$a0", 0, 4},    //procedure arguments
-    {"$a1", 0, 5},
-    {"$a2", 0, 6},
-    {"$a3", 0, 7},
-    {"$t0", 0, 8},    //temporary variables
-    {"$t1", 0, 9},
-    {"$t2", 0, 10},
-    {"$t3", 0, 11},
-    {"$t4", 0, 12},
-    {"$t5", 0, 13},
-    {"$t6", 0, 14},
-    {"$t7", 0, 15},
-    {"$s0", 0, 16},    //saved variables
-    {"$s1", 0, 17},
-    {"$s2", 0, 18},
-    {"$s3", 0, 19},
-    {"$s4", 0, 20},
-    {"$s5", 0, 21},
-    {"$s6", 0, 22},
-    {"$s7", 0, 23},
-    {"$t8", 0, 24},    //temporary variables
-    {"$t9", 0, 25},
-    {"$k0", 0, 26},    //operating system (OS) temporaries
-    {"$k1", 0, 27},
-    {"$gp", 0, 28},    //global pointer
-    {"$sp", 0, 29},    //stack pointer
-    {"$fp", 0, 30},    //frame pointer
-    {"$ra", 0, 31}     //procedure return address
+    {"$0", 0},     //the constant value 0
+    {"$at", 1},    //assembler temporary
+    {"$v0", 2},    //procedure return values
+    {"$v1", 3},
+    {"$a0", 4},    //procedure arguments
+    {"$a1", 5},
+    {"$a2", 6},
+    {"$a3", 7},
+    {"$t0", 8},    //temporary variables
+    {"$t1", 9},
+    {"$t2", 10},
+    {"$t3", 11},
+    {"$t4", 12},
+    {"$t5", 13},
+    {"$t6", 14},
+    {"$t7", 15},
+    {"$s0", 16},    //saved variables
+    {"$s1", 17},
+    {"$s2", 18},
+    {"$s3", 19},
+    {"$s4", 20},
+    {"$s5", 21},
+    {"$s6", 22},
+    {"$s7", 23},
+    {"$t8", 24},    //temporary variables
+    {"$t9", 25},
+    {"$k0", 26},    //operating system (OS) temporaries
+    {"$k1", 27},
+    {"$gp", 28},    //global pointer
+    {"$sp", 29},    //stack pointer
+    {"$fp", 30},    //frame pointer
+    {"$ra", 31}     //procedure return address
 };
 
-// generates a addi instruction based on input values
+char * readFile() {
+    char *text = malloc(20);
+    FILE *file;
+
+    file = fopen("assembly.txt", "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return '\0';
+    }
+
+    fgets(text, 20, file);
+    fclose(file);
+
+    return text;
+}
+
+void getOpcodeMsg(char *opMessage, char *message){
+    // parses the instruction message
+    for(int i = 0; i < strlen(message); i++){
+        // gets the op code as a string
+        if(opMessage[0] == '\0' && message[i] == ' '){
+            strncpy(opMessage, message, i);
+        }
+    }
+}
+
+void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, int *sa, int *funct, int *label, char *opMsg){
+    // searches for the opcode in the lookup table
+    for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
+        if(!strcmp(opMsg, opcodes[i].mnemonic)){
+            // gets the instruction code default parameters
+            *op = opcodes[i].numCode;
+            *type = opcodes[i].instType;
+            *rd = opcodes[i].rdField;
+            *rs = opcodes[i].rsField;
+            *rt = opcodes[i].rtField;
+            *imm = opcodes[i].immField;
+            *sa = opcodes[i].saField;
+            *funct = opcodes[i].functField;
+            *label = opcodes[i].labelField;
+        }
+    }
+}
+
+void iTypeParsing(char *msg, int op, int rt, int rs, int imm, int *argCounter, char *rtMsg, char *rsMsg, char *immMsg){
+    for(int i = 0; i < strlen(msg); i++){
+        if(op >= 8 && op < 32){
+            if(msg[i] == ','){
+                // gets the rt register as a string
+                if(rt == INPUT_FIELD && rtMsg[0] == '\0'){
+                    strncpy(rtMsg, msg + *argCounter, i - *argCounter);
+                    *argCounter += strlen(rtMsg) + 2;
+                }
+                // gets the rs register as a string
+                else if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
+                    strncpy(rsMsg, msg + *argCounter, i - *argCounter);
+                    *argCounter += strlen(rsMsg) + 2;
+                }
+            }
+            if(i == strlen(msg) - 1){
+                if(imm == INPUT_FIELD && immMsg[0] == '\0'){
+                    strncpy(immMsg, msg + *argCounter, strlen(msg) - *argCounter);
+                    *argCounter = 0;
+                }
+            }
+        }
+        else if(op > 32){
+            if(rtMsg[0] == '\0' && msg[i] == ','){
+                strncpy(rtMsg, msg + *argCounter, i - *argCounter);
+                *argCounter += strlen(rtMsg) + 2;
+            }
+            else if(immMsg[0] == '\0' && msg[i] == '('){
+                strncpy(immMsg, msg + *argCounter, i - *argCounter);
+                *argCounter += strlen(immMsg) + 1;
+                if(rsMsg[0] == '\0'){
+                    strncpy(rsMsg, msg + *argCounter, strlen(msg) - *argCounter - 1);
+                    *argCounter = 0;
+                }
+            }
+        }
+    }
+}
+
+// generates an I-TYPE instruction based on input values
 unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtField, unsigned immField){
     unsigned result;
     opField = opField << 26; // bit shift for the opcode in the instruction
@@ -66,46 +170,38 @@ unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtFiel
 }
 
 int main() {
-    unsigned op = 0;
-    unsigned rs = 0;
-    unsigned rt = 0;
-    unsigned imm = 0;
+    char zero[] = {'0'};
+    bool isError = false;
+
+    // declaring instruction variables
+    int type;
+    int op;
+    int rd;
+    int rs;
+    int rt;
+    int imm = 0;
+    int sa;
+    int funct;
+    int label;
     int argCounter = 0;
     char opMsg[30] = {"\0"};
     char rsMsg[30] = {"\0"};
     char rtMsg[30] = {"\0"};
     char immMsg[30] = {"\0"};
 
-    char msg[120];
+    // reads the assembly code file
+    char *msg = readFile();
 
-    printf("Please insert an instruction: ");
-    fgets(msg, sizeof(msg), stdin);
-    for(int i = 0; i < strlen(msg); i++){
-        if(msg[i] == ' '){
-            if(opMsg[0] == '\0'){
-                strncpy(opMsg, msg, i);
-                argCounter += strlen(opMsg) + 1;
-            }
-            else if(rtMsg[0] == '\0'){
-                strncpy(rtMsg, msg + argCounter, i - argCounter);
-                argCounter += strlen(rtMsg) + 1;
-            }
-            else if(rsMsg[0] == '\0'){
-                strncpy(rsMsg, msg + argCounter, i - argCounter);
-                argCounter += strlen(rsMsg) + 1;
-                if(immMsg[0] == '\0'){
-                    strncpy(immMsg, msg + argCounter, i+3 - argCounter);
-                    argCounter = 0;
-                }
-            }
-        }
+    getOpcodeMsg(opMsg, msg);
+    argCounter += strlen(opMsg) + 1;
+
+    getDefaultParams(&op, &type, &rd, &rs, &rt, &imm, &sa, &funct, &label, opMsg);
+
+    if(type == I_TYPE){
+        iTypeParsing(msg, op, rt, rs, imm, &argCounter, rtMsg, rsMsg, immMsg);
     }
 
-    for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
-        if(!strcmp(opMsg, opcodes[i].mnemonic)){
-            op = opcodes[i].numCode;
-        }
-    } 
+    free(msg);
     
     for(int i = 0; i <= sizeof(registers)/sizeof(registers[0]); i++){
         if(!strcmp(rtMsg, registers[i].mnemonic)){
@@ -116,5 +212,25 @@ int main() {
         }
     }
     imm = strtol(immMsg, (char **)NULL, 10);
-    printf("0x%04x", generateInstruction(op, rs, rt, imm));
+
+    if(op < 0 || op > MAX_OPCODE_NUM){
+        printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMsg);
+        isError = true;
+    }
+    if(rt < 0 || rt > MAX_REG_NUM){
+        printf("\nERROR: Register \"%.20s\" not found. Try again\n", rtMsg);
+        isError = true;
+    }
+    if(rs < 0 || rs > MAX_REG_NUM){
+        printf("\nERROR: Register \"%.20s\" not found. Try again\n", rsMsg);
+        isError = true;
+    }
+    if((strcmp(immMsg, zero)) && imm == 0){
+        printf("\nERROR: Immediate \"%.20s\" not valid. Try Again\n", immMsg);
+        isError = true;
+    }
+
+    if(!isError){
+        printf("0x%04x", generateInstruction(op, rs, rt, imm));
+    }
 }
