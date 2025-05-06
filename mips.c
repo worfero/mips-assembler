@@ -81,7 +81,7 @@ char * readFile() {
     char *text = malloc(20);
     FILE *file;
 
-    file = fopen("assembly.txt", "r");
+    file = fopen("assembly.asm", "r");
     if (file == NULL) {
         perror("Error opening file");
         return '\0';
@@ -123,7 +123,7 @@ void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, i
 void iTypeParsing(char *msg, int op, int rt, int rs, int imm, int *argCounter, char *rtMsg, char *rsMsg, char *immMsg){
     for(int i = 0; i < strlen(msg); i++){
         // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
-        if(op < 9){
+        if(op < 8){
             if(msg[i] == ','){
                 // gets the rt register as a string
                 if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
