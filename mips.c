@@ -15,6 +15,20 @@
 #define BUF_SIZE_FILE   65536    // Maximum buffer for a file
 #define BUF_SIZE_LINE   20       // Maximum buffer for a line
 
+typedef struct {
+    // declaring instruction variables
+    int type;
+    int op;
+    int rd;
+    int rs;
+    int rt;
+    int imm;
+    int sa;
+    int funct;
+    int label;
+    char opMne[30];
+} instLine;
+
 // defining instruction code bit fields
 typedef struct {
     char mnemonic[7]; // mnemonic
@@ -122,7 +136,7 @@ int countLines(FILE* file)
     return counter;
 }
 
-char * readFile() {
+char ** readFile() {
     FILE *file;
     
     file = fopen("assembly.asm", "r");
@@ -135,7 +149,8 @@ char * readFile() {
     
     rewind(file);
 
-    char **lines = malloc(numberOfLines * sizeof(char*));
+    char **lines = malloc(numberOfLines * sizeof(char**));
+
     for(int i = 0; i < numberOfLines; i++){
         lines[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
     }
@@ -144,13 +159,10 @@ char * readFile() {
         fgets(lines[i], 20, file);
         // removes newline from the string
         lines[i][strcspn(lines[i], "\n")] = 0;
-        printf("%s\n", lines[i]);
     }
-
-    //fgets(text, 20, file);
     fclose(file);
 
-    return lines[1];
+    return lines;
 }
 
 int getRegister(char *regMne){
@@ -185,41 +197,43 @@ void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
     char rtMne[20];
     char rsMne[20];
 
-    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
-    if(op < 8){
-        // for some instructions, rt is a fixed value
-        if(*rs == INPUT_FIELD){
-            if(*rt == INPUT_FIELD){
-                sscanf(msg, "%s %[^,], %[^,], %d", opMne, rsMne, rtMne, imm);
-                *rt = getRegister(rtMne);
-                *rs = getRegister(rsMne);
-            }
-            else{
-                sscanf(msg, "%s %[^,], %d", opMne, rsMne, imm);
-                *rs = getRegister(rsMne);
-            }
-        }
-    }
-    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
-    else if(op < 32){
-        // for the "lui" instruction, rs is always 0
-        if(*rt == INPUT_FIELD){
+    for(int i=0; i < sizeof(msg); i++){
+        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
+        if(op < 8){
+            // for some instructions, rt is a fixed value
             if(*rs == INPUT_FIELD){
-                sscanf(msg, "%s %[^,], %[^,], %d", opMne, rtMne, rsMne, imm);
-                *rt = getRegister(rtMne);
-                *rs = getRegister(rsMne);
-            }
-            else{
-                sscanf(msg, "%s %[^,], %d", opMne, rtMne, imm);
-                *rt = getRegister(rtMne);
+                if(*rt == INPUT_FIELD){
+                    sscanf(msg, "%s %[^,], %[^,], %d", opMne, rsMne, rtMne, imm);
+                    *rt = getRegister(rtMne);
+                    *rs = getRegister(rsMne);
+                }
+                else{
+                    sscanf(msg, "%s %[^,], %d", opMne, rsMne, imm);
+                    *rs = getRegister(rsMne);
+                }
             }
         }
-    }
-    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
-    else if(op >= 32){
-        sscanf(msg, "%s %[^,], %d(%[^)])", opMne, rtMne, imm, rsMne);
-        *rt = getRegister(rtMne);
-        *rs = getRegister(rsMne);
+        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
+        else if(op < 32){
+            // for the "lui" instruction, rs is always 0
+            if(*rt == INPUT_FIELD){
+                if(*rs == INPUT_FIELD){
+                    sscanf(msg, "%s %[^,], %[^,], %d", opMne, rtMne, rsMne, imm);
+                    *rt = getRegister(rtMne);
+                    *rs = getRegister(rsMne);
+                }
+                else{
+                    sscanf(msg, "%s %[^,], %d", opMne, rtMne, imm);
+                    *rt = getRegister(rtMne);
+                }
+            }
+        }
+        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
+        else if(op >= 32){
+            sscanf(msg, "%s %[^,], %d(%[^)])", opMne, rtMne, imm, rsMne);
+            *rt = getRegister(rtMne);
+            *rs = getRegister(rsMne);
+        }
     }
 }
 
@@ -237,54 +251,52 @@ int main() {
     char zero[] = {'0'};
     bool isError = false;
 
-    // declaring instruction variables
-    int type;
-    int op;
-    int rd;
-    int rs;
-    int rt;
-    int imm;
-    int sa;
-    int funct;
-    int label;
-    char opMne[30] = {"\0"};
-
     // reads the assembly code file
-    char *msg = readFile();
+    char **msg = readFile();
 
-    // gets opcode mnemonic
-    sscanf(msg, "%s ", opMne);
+    instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine));
+    printf("%d\n", sizeof(msg));
+    printf("%d\n", sizeof(instLines)/sizeof(instLines[0]));
+    
+    for(int i = 0; i < sizeof(instLines)/sizeof(instLines[0]); i++){
+        // gets opcode mnemonics
+        sscanf(msg[i], "%s ", instLines[i].opMne);
 
-    // gets default parameters for the opcode using the lookup table
-    getDefaultParams(&op, &type, &rd, &rs, &rt, &imm, &sa, &funct, opMne);
+        // gets default parameters for the opcode using the lookup table
+        getDefaultParams(&instLines[i].op, &instLines[i].type, &instLines[i].rd, &instLines[i].rs, 
+                            &instLines[i].rt, &instLines[i].imm, &instLines[i].sa, &instLines[i].funct, instLines[i].opMne);
+        if(instLines[i].type == I_TYPE){
+            iTypeParsing(msg[i], instLines[i].op, &instLines[i].rt, &instLines[i].rs, &instLines[i].imm);
+        }
 
-    if(type == I_TYPE){
-        iTypeParsing(msg, op, &rt, &rs, &imm);
+        // frees allocated memory to prevent leaks
+        free(msg[i]);
     }
 
-    // frees allocated memory to prevent leaks
     free(msg);
+    printf("%d %d %d %d %d\n", instLines[0].op, instLines[0].type, instLines[0].rd, instLines[0].rs, instLines[0].rt);
 
-    //imm = strtol(immMsg, (char **)NULL, 10);
+    //imm = strtol(immmsg[0], (char **)NULL, 10);
 
-    if(op < 0 || op > MAX_OPCODE_NUM){
-        printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMne);
-        isError = true;
-    }
-    if(rt < 0 || rt > MAX_REG_NUM){
-        printf("\nERROR: Register rt not found. Try again\n");
-        isError = true;
-    }
-    if(rs < 0 || rs > MAX_REG_NUM){
-        printf("\nERROR: Register rs not found. Try again\n");
-        isError = true;
-    }
-    //if((strcmp(immMsg, zero)) && imm == 0){
+    //if(op < 0 || op > MAX_OPCODE_NUM){
+    //    printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMne);
+    //    isError = true;
+    //}
+    //if(rt < 0 || rt > MAX_REG_NUM){
+    //    printf("\nERROR: Register rt not found. Try again\n");
+    //    isError = true;
+    //}
+    //if(rs < 0 || rs > MAX_REG_NUM){
+    //    printf("\nERROR: Register rs not found. Try again\n");
+    //    isError = true;
+    //}
+    //if((strcmp(immmsg[0], zero)) && imm == 0){
     //    printf("\nERROR: Immediate not valid. Try Again\n");
     //    isError = true;
     //}
-
-    if(!isError){
-        printf("0x%04x", generateInstruction(op, rs, rt, imm));
+    for(int i = 0; i < sizeof(instLines); i++){
+        if(!isError){
+            printf("0x%04x\n", generateInstruction(instLines[i].op, instLines[i].rs, instLines[i].rt, instLines[i].imm));
+        }
     }
 }
