@@ -76,6 +76,22 @@ static const Register registers[] =
     {"$ra", 31}     //procedure return address
 };
 
+char * readFile() {
+    char *text = malloc(20);
+    FILE *file;
+
+    file = fopen("assembly.txt", "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return '\0';
+    }
+
+    fgets(text, 20, file);
+    fclose(file);
+
+    return text;
+}
+
 void getOpcodeMsg(char *opMessage, char *message){
     // parses the instruction message
     for(int i = 0; i < strlen(message); i++){
@@ -104,20 +120,43 @@ void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, i
     }
 }
 
-char * readFile() {
-    char *text = malloc(20);
-    FILE *file;
-
-    file = fopen("assembly.txt", "r");
-    if (file == NULL) {
-        perror("Error opening file");
-        return '\0';
+void iTypeParsing(char *msg, int op, int rt, int rs, int imm, int *argCounter, char *rtMsg, char *rsMsg, char *immMsg){
+    for(int i = 0; i < strlen(msg); i++){
+        if(op >= 8 && op < 32){
+            if(msg[i] == ','){
+                // gets the rt register as a string
+                if(rt == INPUT_FIELD && rtMsg[0] == '\0'){
+                    strncpy(rtMsg, msg + *argCounter, i - *argCounter);
+                    *argCounter += strlen(rtMsg) + 2;
+                }
+                // gets the rs register as a string
+                else if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
+                    strncpy(rsMsg, msg + *argCounter, i - *argCounter);
+                    *argCounter += strlen(rsMsg) + 2;
+                }
+            }
+            if(i == strlen(msg) - 1){
+                if(imm == INPUT_FIELD && immMsg[0] == '\0'){
+                    strncpy(immMsg, msg + *argCounter, strlen(msg) - *argCounter);
+                    *argCounter = 0;
+                }
+            }
+        }
+        else if(op > 32){
+            if(rtMsg[0] == '\0' && msg[i] == ','){
+                strncpy(rtMsg, msg + *argCounter, i - *argCounter);
+                *argCounter += strlen(rtMsg) + 2;
+            }
+            else if(immMsg[0] == '\0' && msg[i] == '('){
+                strncpy(immMsg, msg + *argCounter, i - *argCounter);
+                *argCounter += strlen(immMsg) + 1;
+                if(rsMsg[0] == '\0'){
+                    strncpy(rsMsg, msg + *argCounter, strlen(msg) - *argCounter - 1);
+                    *argCounter = 0;
+                }
+            }
+        }
     }
-
-    fgets(text, 20, file);
-    fclose(file);
-
-    return text;
 }
 
 // generates an I-TYPE instruction based on input values
@@ -159,42 +198,7 @@ int main() {
     getDefaultParams(&op, &type, &rd, &rs, &rt, &imm, &sa, &funct, &label, opMsg);
 
     if(type == I_TYPE){
-        for(int i = 0; i < strlen(msg); i++){
-            if(op >= 8 && op < 32){
-                if(msg[i] == ','){
-                    // gets the rt register as a string
-                    if(rt == INPUT_FIELD && rtMsg[0] == '\0'){
-                        strncpy(rtMsg, msg + argCounter, i - argCounter);
-                        argCounter += strlen(rtMsg) + 2;
-                    }
-                    // gets the rs register as a string
-                    else if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
-                        strncpy(rsMsg, msg + argCounter, i - argCounter);
-                        argCounter += strlen(rsMsg) + 2;
-                    }
-                }
-                if(i == strlen(msg) - 1){
-                    if(imm == INPUT_FIELD && immMsg[0] == '\0'){
-                        strncpy(immMsg, msg + argCounter, strlen(msg) - argCounter);
-                        argCounter = 0;
-                    }
-                }
-            }
-            else if(op > 32){
-                if(rtMsg[0] == '\0' && msg[i] == ','){
-                    strncpy(rtMsg, msg + argCounter, i - argCounter);
-                    argCounter += strlen(rtMsg) + 2;
-                }
-                else if(immMsg[0] == '\0' && msg[i] == '('){
-                    strncpy(immMsg, msg + argCounter, i - argCounter);
-                    argCounter += strlen(immMsg) + 1;
-                    if(rsMsg[0] == '\0'){
-                        strncpy(rsMsg, msg + argCounter, strlen(msg) - argCounter - 1);
-                        argCounter = 0;
-                    }
-                }
-            }
-        }
+        iTypeParsing(msg, op, rt, rs, imm, &argCounter, rtMsg, rsMsg, immMsg);
     }
 
     free(msg);
