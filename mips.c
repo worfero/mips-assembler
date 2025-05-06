@@ -6,7 +6,7 @@
 #define R_TYPE          1        // R-TYPE instruction
 #define I_TYPE          2        // I-TYPE instruction
 #define J_TYPE          3        // J-TYPE instruction
-#define N_A             -2       // field not applicable
+#define N_A             0       // field not applicable
 #define INPUT_FIELD     -1       // input field
 
 #define MAX_REG_NUM 31      // Maximum number of registers available
@@ -93,16 +93,6 @@ char * readFile() {
     return text;
 }
 
-void getOpcodeMsg(char *opMessage, char *message){
-    // parses the instruction message
-    for(int i = 0; i < strlen(message); i++){
-        // gets the op code as a string
-        if(opMessage[0] == '\0' && message[i] == ' '){
-            strncpy(opMessage, message, i);
-        }
-    }
-}
-
 void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, int *sa, int *funct, char *opMsg){
     // searches for the opcode in the lookup table
     for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
@@ -120,70 +110,37 @@ void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, i
     }
 }
 
-void iTypeParsing(char *msg, int op, int rt, int rs, int imm, int *argCounter, char *rtMsg, char *rsMsg, char *immMsg){
-    for(int i = 0; i < strlen(msg); i++){
-        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
-        if(op < 8){
-            if(msg[i] == ','){
-                // gets the rt register as a string
-                if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
-                    strncpy(rsMsg, msg + *argCounter, i - *argCounter);
-                    *argCounter += strlen(rsMsg) + 2;
-                }
-                // gets the rs register as a string
-                else if(rt == INPUT_FIELD && rtMsg[0] == '\0'){
-                    strncpy(rtMsg, msg + *argCounter, i - *argCounter);
-                    *argCounter += strlen(rtMsg) + 2;
-                }
+void iTypeParsing(char *msg, int op, int rt, int rs, int imm, char *rtMsg, char *rsMsg, char *immMsg){
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
+    if(op < 8){
+        char discard[20];
+        // for some instructions, rt is a fixed value
+        if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
+            if(rt == INPUT_FIELD && rtMsg[0] == '\0'){
+                sscanf(msg, "%s %[^,], %[^,], %s", discard, rsMsg, rtMsg, immMsg);
             }
-            if(i == strlen(msg) - 1){
-                // gets the immediate as a string
-                if(imm == INPUT_FIELD && immMsg[0] == '\0'){
-                    strncpy(immMsg, msg + *argCounter, strlen(msg) - *argCounter);
-                    *argCounter = 0;
-                }
-            }       
-        }
-        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
-        else if(op < 32){
-            if(msg[i] == ','){
-                // gets the rt register as a string
-                if(rt == INPUT_FIELD && rtMsg[0] == '\0'){
-                    strncpy(rtMsg, msg + *argCounter, i - *argCounter);
-                    *argCounter += strlen(rtMsg) + 2;
-                }
-                // gets the rs register as a string
-                else if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
-                    strncpy(rsMsg, msg + *argCounter, i - *argCounter);
-                    *argCounter += strlen(rsMsg) + 2;
-                }
-            }
-            if(i == strlen(msg) - 1){
-                // gets the immediate as a string
-                if(imm == INPUT_FIELD && immMsg[0] == '\0'){
-                    strncpy(immMsg, msg + *argCounter, strlen(msg) - *argCounter);
-                    *argCounter = 0;
-                }
+            else{
+                sscanf(msg, "%s %[^,], %s", discard, rsMsg, immMsg);
             }
         }
-        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
-        else if(op >= 32){
-            // gets the rt register as a string
-            if(rtMsg[0] == '\0' && msg[i] == ','){
-                strncpy(rtMsg, msg + *argCounter, i - *argCounter);
-                *argCounter += strlen(rtMsg) + 2;
+    }
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
+    else if(op < 32){
+        char discard[20];
+        // for the "lui" instruction, rs is always 0
+        if(rt == INPUT_FIELD && rtMsg[0] == '\0'){
+            if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
+                sscanf(msg, "%s %[^,], %[^,], %s", discard, rtMsg, rsMsg, immMsg);
             }
-            // gets the immediate as a string
-            else if(immMsg[0] == '\0' && msg[i] == '('){
-                strncpy(immMsg, msg + *argCounter, i - *argCounter);
-                *argCounter += strlen(immMsg) + 1;
-                // gets the rs register as a string
-                if(rsMsg[0] == '\0'){
-                    strncpy(rsMsg, msg + *argCounter, strlen(msg) - *argCounter - 1);
-                    *argCounter = 0;
-                }
+            else{
+                sscanf(msg, "%s %[^,], %s", discard, rtMsg, immMsg);
             }
         }
+    }
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
+    else if(op >= 32){
+        char discard[20];
+        sscanf(msg, "%s %[^,], %[^(]( %[^)])", discard, rtMsg, immMsg, rsMsg);
     }
 }
 
@@ -211,7 +168,6 @@ int main() {
     int sa;
     int funct;
     int label;
-    int argCounter = 0;
     char opMsg[30] = {"\0"};
     char rsMsg[30] = {"\0"};
     char rtMsg[30] = {"\0"};
@@ -220,13 +176,13 @@ int main() {
     // reads the assembly code file
     char *msg = readFile();
 
-    getOpcodeMsg(opMsg, msg);
-    argCounter += strlen(opMsg) + 1;
+    // gets opcode mnemonic
+    sscanf(msg, "%s ", opMsg);
 
     getDefaultParams(&op, &type, &rd, &rs, &rt, &imm, &sa, &funct, opMsg);
 
     if(type == I_TYPE){
-        iTypeParsing(msg, op, rt, rs, imm, &argCounter, rtMsg, rsMsg, immMsg);
+        iTypeParsing(msg, op, rt, rs, imm, rtMsg, rsMsg, immMsg);
     }
 
     free(msg);
