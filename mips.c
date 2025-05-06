@@ -6,7 +6,7 @@
 #define R_TYPE          1        // R-TYPE instruction
 #define I_TYPE          2        // I-TYPE instruction
 #define J_TYPE          3        // J-TYPE instruction
-#define N_A             0        // field not applicable
+#define N_A             -2       // field not applicable
 #define INPUT_FIELD     -1       // input field
 
 #define MAX_REG_NUM 31      // Maximum number of registers available
@@ -23,14 +23,15 @@ typedef struct {
     int immField; // immediate
     int saField; // shamt
     int functField; // function code
-    int labelField; // label
 } Opcode;
 
 static const Opcode opcodes[] =
 {
-    {"addi", I_TYPE, 8, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A},
-    {"lw", I_TYPE, 35, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A},
-    {"lui", I_TYPE, 15, N_A, N_A, INPUT_FIELD, INPUT_FIELD, N_A, N_A, N_A}
+    {"bgez", I_TYPE, 1, N_A, INPUT_FIELD, 1, INPUT_FIELD, N_A, N_A},
+    {"beq", I_TYPE, 4, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"addi", I_TYPE, 8, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"lw", I_TYPE, 35, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"lui", I_TYPE, 15, N_A, N_A, INPUT_FIELD, INPUT_FIELD, N_A, N_A}
 };
 
 // defining register structure
@@ -102,7 +103,7 @@ void getOpcodeMsg(char *opMessage, char *message){
     }
 }
 
-void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, int *sa, int *funct, int *label, char *opMsg){
+void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, int *sa, int *funct, char *opMsg){
     // searches for the opcode in the lookup table
     for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
         if(!strcmp(opMsg, opcodes[i].mnemonic)){
@@ -115,14 +116,36 @@ void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, i
             *imm = opcodes[i].immField;
             *sa = opcodes[i].saField;
             *funct = opcodes[i].functField;
-            *label = opcodes[i].labelField;
         }
     }
 }
 
 void iTypeParsing(char *msg, int op, int rt, int rs, int imm, int *argCounter, char *rtMsg, char *rsMsg, char *immMsg){
     for(int i = 0; i < strlen(msg); i++){
-        if(op >= 8 && op < 32){
+        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
+        if(op < 9){
+            if(msg[i] == ','){
+                // gets the rt register as a string
+                if(rs == INPUT_FIELD && rsMsg[0] == '\0'){
+                    strncpy(rsMsg, msg + *argCounter, i - *argCounter);
+                    *argCounter += strlen(rsMsg) + 2;
+                }
+                // gets the rs register as a string
+                else if(rt == INPUT_FIELD && rtMsg[0] == '\0'){
+                    strncpy(rtMsg, msg + *argCounter, i - *argCounter);
+                    *argCounter += strlen(rtMsg) + 2;
+                }
+            }
+            if(i == strlen(msg) - 1){
+                // gets the immediate as a string
+                if(imm == INPUT_FIELD && immMsg[0] == '\0'){
+                    strncpy(immMsg, msg + *argCounter, strlen(msg) - *argCounter);
+                    *argCounter = 0;
+                }
+            }       
+        }
+        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
+        else if(op < 32){
             if(msg[i] == ','){
                 // gets the rt register as a string
                 if(rt == INPUT_FIELD && rtMsg[0] == '\0'){
@@ -136,20 +159,25 @@ void iTypeParsing(char *msg, int op, int rt, int rs, int imm, int *argCounter, c
                 }
             }
             if(i == strlen(msg) - 1){
+                // gets the immediate as a string
                 if(imm == INPUT_FIELD && immMsg[0] == '\0'){
                     strncpy(immMsg, msg + *argCounter, strlen(msg) - *argCounter);
                     *argCounter = 0;
                 }
             }
         }
-        else if(op > 32){
+        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
+        else if(op >= 32){
+            // gets the rt register as a string
             if(rtMsg[0] == '\0' && msg[i] == ','){
                 strncpy(rtMsg, msg + *argCounter, i - *argCounter);
                 *argCounter += strlen(rtMsg) + 2;
             }
+            // gets the immediate as a string
             else if(immMsg[0] == '\0' && msg[i] == '('){
                 strncpy(immMsg, msg + *argCounter, i - *argCounter);
                 *argCounter += strlen(immMsg) + 1;
+                // gets the rs register as a string
                 if(rsMsg[0] == '\0'){
                     strncpy(rsMsg, msg + *argCounter, strlen(msg) - *argCounter - 1);
                     *argCounter = 0;
@@ -195,7 +223,7 @@ int main() {
     getOpcodeMsg(opMsg, msg);
     argCounter += strlen(opMsg) + 1;
 
-    getDefaultParams(&op, &type, &rd, &rs, &rt, &imm, &sa, &funct, &label, opMsg);
+    getDefaultParams(&op, &type, &rd, &rs, &rt, &imm, &sa, &funct, opMsg);
 
     if(type == I_TYPE){
         iTypeParsing(msg, op, rt, rs, imm, &argCounter, rtMsg, rsMsg, immMsg);
@@ -204,10 +232,10 @@ int main() {
     free(msg);
     
     for(int i = 0; i <= sizeof(registers)/sizeof(registers[0]); i++){
-        if(!strcmp(rtMsg, registers[i].mnemonic)){
+        if(!strcmp(rtMsg, registers[i].mnemonic) && rt == INPUT_FIELD){
             rt = registers[i].numCode;
         }
-        if(!strcmp(rsMsg, registers[i].mnemonic)){
+        if(!strcmp(rsMsg, registers[i].mnemonic) && rs == INPUT_FIELD){
             rs = registers[i].numCode;
         }
     }
