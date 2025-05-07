@@ -136,7 +136,7 @@ int countLines(FILE* file)
     return counter;
 }
 
-char ** readFile() {
+char ** readFile(int *numberOfLines) {
     FILE *file;
     
     file = fopen("assembly.asm", "r");
@@ -145,17 +145,17 @@ char ** readFile() {
         return '\0';
     }
 
-    int numberOfLines = countLines(file);
+    *numberOfLines = countLines(file);
     
     rewind(file);
 
-    char **lines = malloc(numberOfLines * sizeof(char**));
+    char **lines = malloc(*numberOfLines * sizeof(char**));
 
-    for(int i = 0; i < numberOfLines; i++){
+    for(int i = 0; i < *numberOfLines; i++){
         lines[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
     }
 
-    for(int i = 0; i < numberOfLines; i++){
+    for(int i = 0; i < *numberOfLines; i++){
         fgets(lines[i], 20, file);
         // removes newline from the string
         lines[i][strcspn(lines[i], "\n")] = 0;
@@ -250,15 +250,14 @@ unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtFiel
 int main() {
     char zero[] = {'0'};
     bool isError = false;
+    int numberOfLines = 0;
 
     // reads the assembly code file
-    char **msg = readFile();
+    char **msg = readFile(&numberOfLines);
 
     instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine));
-    printf("%d\n", sizeof(msg));
-    printf("%d\n", sizeof(instLines)/sizeof(instLines[0]));
     
-    for(int i = 0; i < sizeof(instLines)/sizeof(instLines[0]); i++){
+    for(int i = 0; i < numberOfLines; i++){
         // gets opcode mnemonics
         sscanf(msg[i], "%s ", instLines[i].opMne);
 
@@ -274,7 +273,6 @@ int main() {
     }
 
     free(msg);
-    printf("%d %d %d %d %d\n", instLines[0].op, instLines[0].type, instLines[0].rd, instLines[0].rs, instLines[0].rt);
 
     //imm = strtol(immmsg[0], (char **)NULL, 10);
 
@@ -294,7 +292,7 @@ int main() {
     //    printf("\nERROR: Immediate not valid. Try Again\n");
     //    isError = true;
     //}
-    for(int i = 0; i < sizeof(instLines); i++){
+    for(int i = 0; i < numberOfLines; i++){
         if(!isError){
             printf("0x%04x\n", generateInstruction(instLines[i].op, instLines[i].rs, instLines[i].rt, instLines[i].imm));
         }
