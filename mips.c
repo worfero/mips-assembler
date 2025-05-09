@@ -45,6 +45,7 @@ typedef struct {
 // lookup table for opcodes
 static const Opcode opcodes[] =
 {
+    {"add", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, INPUT_FIELD},
     {"bgez", I_TYPE, 1, N_A, INPUT_FIELD, 1, INPUT_FIELD, N_A, N_A},
     {"bltz", I_TYPE, 1, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
     {"bne", I_TYPE, 5, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
@@ -237,6 +238,29 @@ void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
     }
 }
 
+instructionParsing(int numberOfLines, char **msg, instLine *instLines){
+    for(int i = 0; i < numberOfLines; i++){
+        // declares a variable named cur_line for better code reading
+        instLine *cur_line = &instLines[i];
+
+        // gets opcode mnemonics
+        sscanf(msg[i], "%s ", cur_line->opMne);
+
+        // gets default parameters for the opcode using the lookup table
+        getDefaultParams(&cur_line->op, &cur_line->type, &cur_line->rd, &cur_line->rs, 
+                            &cur_line->rt, &cur_line->imm, &cur_line->sa, &cur_line->funct, cur_line->opMne);
+        switch(cur_line->type){
+            case R_TYPE:
+                break;
+            case I_TYPE:
+                iTypeParsing(msg[i], cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm);
+                break;
+        }
+        // frees allocated memory to prevent leaks
+        free(msg[i]);
+    }
+}
+
 // generates an I-TYPE instruction based on input values
 unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtField, unsigned immField){
     unsigned result;
@@ -248,7 +272,6 @@ unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtFiel
 }
 
 int main() {
-    char zero[] = {'0'};
     bool isError = false;
     int numberOfLines = 0;
 
@@ -257,24 +280,29 @@ int main() {
 
     instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine));
     
-    for(int i = 0; i < numberOfLines; i++){
-        // gets opcode mnemonics
-        sscanf(msg[i], "%s ", instLines[i].opMne);
+    instructionParsing(numberOfLines, msg, instLines);
 
-        // gets default parameters for the opcode using the lookup table
-        getDefaultParams(&instLines[i].op, &instLines[i].type, &instLines[i].rd, &instLines[i].rs, 
-                            &instLines[i].rt, &instLines[i].imm, &instLines[i].sa, &instLines[i].funct, instLines[i].opMne);
-        if(instLines[i].type == I_TYPE){
-            iTypeParsing(msg[i], instLines[i].op, &instLines[i].rt, &instLines[i].rs, &instLines[i].imm);
-        }
-
-        // frees allocated memory to prevent leaks
-        free(msg[i]);
-    }
+    //for(int i = 0; i < numberOfLines; i++){
+    //    // gets opcode mnemonics
+    //    sscanf(msg[i], "%s ", instLines[i].opMne);
+    //    // declares a variable named cur_line for better code reading
+    //    instLine *cur_line = &instLines[i];
+//
+    //    // gets default parameters for the opcode using the lookup table
+    //    getDefaultParams(&cur_line->op, &cur_line->type, &cur_line->rd, &cur_line->rs, 
+    //                        &cur_line->rt, &cur_line->imm, &cur_line->sa, &cur_line->funct, cur_line->opMne);
+    //    switch(cur_line->type){
+    //        case R_TYPE:
+    //            break;
+    //        case I_TYPE:
+    //            iTypeParsing(msg[i], cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm);
+    //            break;
+    //    }
+    //    // frees allocated memory to prevent leaks
+    //    free(msg[i]);
+    //}
 
     free(msg);
-
-    //imm = strtol(immmsg[0], (char **)NULL, 10);
 
     //if(op < 0 || op > MAX_OPCODE_NUM){
     //    printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMne);
@@ -297,4 +325,5 @@ int main() {
             printf("0x%04x\n", generateInstruction(instLines[i].op, instLines[i].rs, instLines[i].rt, instLines[i].imm));
         }
     }
+    free(instLines);
 }
