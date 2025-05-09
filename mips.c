@@ -45,7 +45,7 @@ typedef struct {
 // lookup table for opcodes
 static const Opcode opcodes[] =
 {
-    {"add", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, INPUT_FIELD},
+    {"add", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 32},
     {"bgez", I_TYPE, 1, N_A, INPUT_FIELD, 1, INPUT_FIELD, N_A, N_A},
     {"bltz", I_TYPE, 1, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
     {"bne", I_TYPE, 5, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
@@ -193,81 +193,101 @@ void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, i
     }
 }
 
+void rTypeParsing(char *msg, int *rd, int *rs, int *rt, int *sa, int funct){
+    char opMne[20];
+    char rtMne[20];
+    char rsMne[20];
+    char rdMne[20];
+
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
+    if(funct > 31){
+        // for some instructions, rt is a fixed value
+        sscanf(msg, "%s %[^,], %[^,], %s", opMne, rdMne, rsMne, rtMne);
+        *rs = getRegister(rsMne);
+        *rt = getRegister(rtMne);
+        *rd = getRegister(rdMne);
+    }
+}
+
 void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
     char opMne[20];
     char rtMne[20];
     char rsMne[20];
 
-    for(int i=0; i < sizeof(msg); i++){
-        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
-        if(op < 8){
-            // for some instructions, rt is a fixed value
-            if(*rs == INPUT_FIELD){
-                if(*rt == INPUT_FIELD){
-                    sscanf(msg, "%s %[^,], %[^,], %d", opMne, rsMne, rtMne, imm);
-                    *rt = getRegister(rtMne);
-                    *rs = getRegister(rsMne);
-                }
-                else{
-                    sscanf(msg, "%s %[^,], %d", opMne, rsMne, imm);
-                    *rs = getRegister(rsMne);
-                }
-            }
-        }
-        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
-        else if(op < 32){
-            // for the "lui" instruction, rs is always 0
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
+    if(op < 8){
+        // for some instructions, rt is a fixed value
+        if(*rs == INPUT_FIELD){
             if(*rt == INPUT_FIELD){
-                if(*rs == INPUT_FIELD){
-                    sscanf(msg, "%s %[^,], %[^,], %d", opMne, rtMne, rsMne, imm);
-                    *rt = getRegister(rtMne);
-                    *rs = getRegister(rsMne);
-                }
-                else{
-                    sscanf(msg, "%s %[^,], %d", opMne, rtMne, imm);
-                    *rt = getRegister(rtMne);
-                }
+                sscanf(msg, "%s %[^,], %[^,], %d", opMne, rsMne, rtMne, imm);
+                *rt = getRegister(rtMne);
+                *rs = getRegister(rsMne);
+            }
+            else{
+                sscanf(msg, "%s %[^,], %d", opMne, rsMne, imm);
+                *rs = getRegister(rsMne);
             }
         }
-        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
-        else if(op >= 32){
-            sscanf(msg, "%s %[^,], %d(%[^)])", opMne, rtMne, imm, rsMne);
-            *rt = getRegister(rtMne);
-            *rs = getRegister(rsMne);
+    }
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
+    else if(op < 32){
+        // for the "lui" instruction, rs is always 0
+        if(*rt == INPUT_FIELD){
+            if(*rs == INPUT_FIELD){
+                sscanf(msg, "%s %[^,], %[^,], %d", opMne, rtMne, rsMne, imm);
+                *rt = getRegister(rtMne);
+                *rs = getRegister(rsMne);
+            }
+            else{
+                sscanf(msg, "%s %[^,], %d", opMne, rtMne, imm);
+                *rt = getRegister(rtMne);
+            }
         }
+    }
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
+    else if(op >= 32){
+        sscanf(msg, "%s %[^,], %d(%[^)])", opMne, rtMne, imm, rsMne);
+        *rt = getRegister(rtMne);
+        *rs = getRegister(rsMne);
     }
 }
 
-instructionParsing(int numberOfLines, char **msg, instLine *instLines){
-    for(int i = 0; i < numberOfLines; i++){
-        // declares a variable named cur_line for better code reading
-        instLine *cur_line = &instLines[i];
+instructionParsing(int numberOfLines, char *msg, instLine *cur_line){
+    // gets opcode mnemonics
+    sscanf(msg, "%s ", cur_line->opMne);
 
-        // gets opcode mnemonics
-        sscanf(msg[i], "%s ", cur_line->opMne);
-
-        // gets default parameters for the opcode using the lookup table
-        getDefaultParams(&cur_line->op, &cur_line->type, &cur_line->rd, &cur_line->rs, 
-                            &cur_line->rt, &cur_line->imm, &cur_line->sa, &cur_line->funct, cur_line->opMne);
-        switch(cur_line->type){
-            case R_TYPE:
-                break;
-            case I_TYPE:
-                iTypeParsing(msg[i], cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm);
-                break;
-        }
-        // frees allocated memory to prevent leaks
-        free(msg[i]);
+    // gets default parameters for the opcode using the lookup table
+    getDefaultParams(&cur_line->op, &cur_line->type, &cur_line->rd, &cur_line->rs, 
+                        &cur_line->rt, &cur_line->imm, &cur_line->sa, &cur_line->funct, cur_line->opMne);
+    switch(cur_line->type){
+        case R_TYPE:
+            rTypeParsing(msg, &cur_line->rd, &cur_line->rs, &cur_line->rt, &cur_line->sa, cur_line->funct);
+            break;
+        case I_TYPE:
+            iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm);
+            break;
     }
+    // frees allocated memory to prevent leaks
+    free(msg);
 }
 
 // generates an I-TYPE instruction based on input values
-unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtField, unsigned immField){
+unsigned generateInstruction(instLine inst){
     unsigned result;
-    opField = opField << 26; // bit shift for the opcode in the instruction
-    rsField = rsField << 21; // bit shift for the rs in the instruction
-    rtField = rtField << 16; // bit shift for the rt in the instruction
-    result = opField + rsField + rtField + immField;
+    if(inst.op != 0){
+        inst.op = inst.op << 26; // bit shift for the opcode in the instruction
+        inst.rs = inst.rs << 21; // bit shift for the rs in the instruction
+        inst.rt = inst.rt << 16; // bit shift for the rt in the instruction
+        result = inst.op + inst.rs + inst.rt + inst.imm;
+    }
+    else{
+        inst.op = inst.op << 26; // bit shift for the opcode in the instruction
+        inst.rs = inst.rs << 21; // bit shift for the rs in the instruction
+        inst.rt = inst.rt << 16; // bit shift for the rt in the instruction
+        inst.rd = inst.rd << 11; // bit shift for the rd in the instruction
+        inst.sa = inst.sa << 6; // bit shift for the sa in the instruction
+        result = inst.op + inst.rs + inst.rt + inst.rd + inst.sa + inst.funct;
+    }
     return result;
 }
 
@@ -279,28 +299,10 @@ int main() {
     char **msg = readFile(&numberOfLines);
 
     instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine));
-    
-    instructionParsing(numberOfLines, msg, instLines);
 
-    //for(int i = 0; i < numberOfLines; i++){
-    //    // gets opcode mnemonics
-    //    sscanf(msg[i], "%s ", instLines[i].opMne);
-    //    // declares a variable named cur_line for better code reading
-    //    instLine *cur_line = &instLines[i];
-//
-    //    // gets default parameters for the opcode using the lookup table
-    //    getDefaultParams(&cur_line->op, &cur_line->type, &cur_line->rd, &cur_line->rs, 
-    //                        &cur_line->rt, &cur_line->imm, &cur_line->sa, &cur_line->funct, cur_line->opMne);
-    //    switch(cur_line->type){
-    //        case R_TYPE:
-    //            break;
-    //        case I_TYPE:
-    //            iTypeParsing(msg[i], cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm);
-    //            break;
-    //    }
-    //    // frees allocated memory to prevent leaks
-    //    free(msg[i]);
-    //}
+    for(int i = 0; i < numberOfLines; i++){
+        instructionParsing(numberOfLines, msg[i], &instLines[i]);
+    }    
 
     free(msg);
 
@@ -322,7 +324,7 @@ int main() {
     //}
     for(int i = 0; i < numberOfLines; i++){
         if(!isError){
-            printf("0x%04x\n", generateInstruction(instLines[i].op, instLines[i].rs, instLines[i].rt, instLines[i].imm));
+            printf("0x%04x\n", generateInstruction(instLines[i]));
         }
     }
     free(instLines);
