@@ -75,6 +75,8 @@ static const Opcode opcodes[] =
     {"sltu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 43 },
     {"bgez"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 1          , INPUT_FIELD, N_A        , N_A},
     {"bltz"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
+    {"j"       , J_TYPE, 2 , N_A        , N_A        , N_A        , INPUT_FIELD, N_A        , N_A},
+    {"jal"     , J_TYPE, 3 , N_A        , N_A        , N_A        , INPUT_FIELD, N_A        , N_A},
     {"bne"     , I_TYPE, 5 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
     {"blez"    , I_TYPE, 6 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
     {"bgtz"    , I_TYPE, 7 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
@@ -96,7 +98,7 @@ static const Opcode opcodes[] =
     {"sh"      , I_TYPE, 41, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
     {"sw"      , I_TYPE, 43, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
     {"lwcl"    , I_TYPE, 49, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"swcl"    , I_TYPE, 56, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"swcl"    , I_TYPE, 56, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A}
 };
 
 // defining register structure
@@ -316,6 +318,11 @@ void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
     }
 }
 
+void jTypeParsing(char *msg, int op, int *offset){
+    char field1[20];
+    sscanf(msg, "%s %d", field1, offset);
+}
+
 instructionParsing(int numberOfLines, char *msg, instLine *cur_line){
     // gets opcode mnemonics
     sscanf(msg, "%s ", cur_line->field1);
@@ -330,6 +337,9 @@ instructionParsing(int numberOfLines, char *msg, instLine *cur_line){
         case I_TYPE:
             iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm);
             break;
+        case J_TYPE:
+            jTypeParsing(msg, cur_line->op, &cur_line->imm);
+            break;
     }
     // frees allocated memory to prevent leaks
     free(msg);
@@ -343,6 +353,10 @@ unsigned generateInstruction(instLine inst){
         inst.rs = inst.rs << 21; // bit shift for the rs in the instruction
         inst.rt = inst.rt << 16; // bit shift for the rt in the instruction
         result = inst.op + inst.rs + inst.rt + inst.imm;
+    }
+    else if(inst.op == 2 || inst.op == 3){
+        inst.op = inst.op << 26; // bit shift for the opcode in the instruction
+        result = inst.op + inst.imm;
     }
     else{
         inst.op = inst.op << 26; // bit shift for the opcode in the instruction
