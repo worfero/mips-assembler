@@ -26,7 +26,7 @@ typedef struct {
     int sa;
     int funct;
     int label;
-    char opMne[30];
+    char field1[30];
 } instLine;
 
 // defining instruction code bit fields
@@ -45,6 +45,9 @@ typedef struct {
 // lookup table for opcodes
 static const Opcode opcodes[] =
 {
+    {"sll", R_TYPE, 0, INPUT_FIELD, N_A, INPUT_FIELD, N_A, INPUT_FIELD, 0},
+    {"srl", R_TYPE, 0, INPUT_FIELD, N_A, INPUT_FIELD, N_A, INPUT_FIELD, 2},
+    {"sra", R_TYPE, 0, INPUT_FIELD, N_A, INPUT_FIELD, N_A, INPUT_FIELD, 3},
     {"add", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 32},
     {"addu", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 33},
     {"sub", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 34},
@@ -185,10 +188,10 @@ int getRegister(char *regMne){
     return reg;
 }
 
-void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, int *sa, int *funct, char *opMne){
+void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, int *sa, int *funct, char *field1){
     // searches for the opcode in the lookup table
     for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
-        if(!strcmp(opMne, opcodes[i].mnemonic)){
+        if(!strcmp(field1, opcodes[i].mnemonic)){
             // gets the instruction code default parameters
             *op = opcodes[i].numCode;
             *type = opcodes[i].instType;
@@ -203,38 +206,44 @@ void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, i
 }
 
 void rTypeParsing(char *msg, int *rd, int *rs, int *rt, int *sa, int funct){
-    char opMne[20];
-    char rtMne[20];
-    char rsMne[20];
-    char rdMne[20];
+    char field1[20];
+    char field2[20];
+    char field3[20];
+    char field4[20];
 
-    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, shamt"
+    if(funct < 4){
+        sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, sa);
+        *rt = getRegister(field3);
+        *rd = getRegister(field2);
+    }
+
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, rs"
     if(funct > 31){
-        // for some instructions, rt is a fixed value
-        sscanf(msg, "%s %[^,], %[^,], %s", opMne, rdMne, rsMne, rtMne);
-        *rs = getRegister(rsMne);
-        *rt = getRegister(rtMne);
-        *rd = getRegister(rdMne);
+        sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, field4);
+        *rs = getRegister(field3);
+        *rt = getRegister(field4);
+        *rd = getRegister(field2);
     }
 }
 
 void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
-    char opMne[20];
-    char rtMne[20];
-    char rsMne[20];
+    char field1[20];
+    char field2[20];
+    char field3[20];
 
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
     if(op < 8){
         // for some instructions, rt is a fixed value
         if(*rs == INPUT_FIELD){
             if(*rt == INPUT_FIELD){
-                sscanf(msg, "%s %[^,], %[^,], %d", opMne, rsMne, rtMne, imm);
-                *rt = getRegister(rtMne);
-                *rs = getRegister(rsMne);
+                sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, imm);
+                *rt = getRegister(field3);
+                *rs = getRegister(field2);
             }
             else{
-                sscanf(msg, "%s %[^,], %d", opMne, rsMne, imm);
-                *rs = getRegister(rsMne);
+                sscanf(msg, "%s %[^,], %d", field1, field2, imm);
+                *rs = getRegister(field2);
             }
         }
     }
@@ -243,31 +252,31 @@ void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
         // for the "lui" instruction, rs is always 0
         if(*rt == INPUT_FIELD){
             if(*rs == INPUT_FIELD){
-                sscanf(msg, "%s %[^,], %[^,], %d", opMne, rtMne, rsMne, imm);
-                *rt = getRegister(rtMne);
-                *rs = getRegister(rsMne);
+                sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, imm);
+                *rt = getRegister(field2);
+                *rs = getRegister(field3);
             }
             else{
-                sscanf(msg, "%s %[^,], %d", opMne, rtMne, imm);
-                *rt = getRegister(rtMne);
+                sscanf(msg, "%s %[^,], %d", field1, field2, imm);
+                *rt = getRegister(field2);
             }
         }
     }
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
     else if(op >= 32){
-        sscanf(msg, "%s %[^,], %d(%[^)])", opMne, rtMne, imm, rsMne);
-        *rt = getRegister(rtMne);
-        *rs = getRegister(rsMne);
+        sscanf(msg, "%s %[^,], %d(%[^)])", field1, field2, imm, field3);
+        *rt = getRegister(field2);
+        *rs = getRegister(field3);
     }
 }
 
 instructionParsing(int numberOfLines, char *msg, instLine *cur_line){
     // gets opcode mnemonics
-    sscanf(msg, "%s ", cur_line->opMne);
+    sscanf(msg, "%s ", cur_line->field1);
 
     // gets default parameters for the opcode using the lookup table
     getDefaultParams(&cur_line->op, &cur_line->type, &cur_line->rd, &cur_line->rs, 
-                        &cur_line->rt, &cur_line->imm, &cur_line->sa, &cur_line->funct, cur_line->opMne);
+                        &cur_line->rt, &cur_line->imm, &cur_line->sa, &cur_line->funct, cur_line->field1);
     switch(cur_line->type){
         case R_TYPE:
             rTypeParsing(msg, &cur_line->rd, &cur_line->rs, &cur_line->rt, &cur_line->sa, cur_line->funct);
@@ -316,7 +325,7 @@ int main() {
     free(msg);
 
     //if(op < 0 || op > MAX_OPCODE_NUM){
-    //    printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMne);
+    //    printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", field1);
     //    isError = true;
     //}
     //if(rt < 0 || rt > MAX_REG_NUM){
