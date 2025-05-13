@@ -46,6 +46,15 @@ typedef struct {
 static const Opcode opcodes[] =
 {
     {"add", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 32},
+    {"addu", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 33},
+    {"sub", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 34},
+    {"subu", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 35},
+    {"and", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 36},
+    {"or", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 37},
+    {"xor", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 38},
+    {"nor", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 39},
+    {"slt", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 42},
+    {"sltu", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 43},
     {"bgez", I_TYPE, 1, N_A, INPUT_FIELD, 1, INPUT_FIELD, N_A, N_A},
     {"bltz", I_TYPE, 1, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
     {"bne", I_TYPE, 5, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
@@ -298,11 +307,11 @@ int main() {
     // reads the assembly code file
     char **msg = readFile(&numberOfLines);
 
-    instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine));
+    instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine) * numberOfLines);
 
     for(int i = 0; i < numberOfLines; i++){
         instructionParsing(numberOfLines, msg[i], &instLines[i]);
-    }    
+    }
 
     free(msg);
 
@@ -323,9 +332,10 @@ int main() {
     //    isError = true;
     //}
     for(int i = 0; i < numberOfLines; i++){
-        if(!isError){
-            printf("0x%04x\n", generateInstruction(instLines[i]));
-        }
+        //if(!isError){
+        //    printf("0x%04x\n", generateInstruction(instLines[i]));
+        //}
+        printf("0x%04x\n", generateInstruction(instLines[i]));
     }
     free(instLines);
 }
