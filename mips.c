@@ -195,6 +195,12 @@ char ** readFile(int *numberOfLines) {
     return lines;
 }
 
+void writeFile(unsigned data[], int numberOfLines){
+    FILE *file;
+    file = fopen("machine-code.bin", "wb");
+    fwrite(data, sizeof(unsigned), numberOfLines, file);
+}
+
 int getRegister(char *regMne){
     int reg;
     for(int i = 0; i <= sizeof(registers)/sizeof(registers[0]); i++){
@@ -375,6 +381,7 @@ int main() {
 
     // reads the assembly code file
     char **msg = readFile(&numberOfLines);
+    int *data = malloc(numberOfLines);
 
     instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine) * numberOfLines);
 
@@ -405,6 +412,8 @@ int main() {
         //    printf("0x%04x\n", generateInstruction(instLines[i]));
         //}
         printf("0x%04x\n", generateInstruction(instLines[i]));
+        data[i] = generateInstruction(instLines[i]);
     }
     free(instLines);
+    writeFile(data, numberOfLines);
 }
