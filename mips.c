@@ -45,43 +45,58 @@ typedef struct {
 // lookup table for opcodes
 static const Opcode opcodes[] =
 {
-    {"sll", R_TYPE, 0, INPUT_FIELD, N_A, INPUT_FIELD, N_A, INPUT_FIELD, 0},
-    {"srl", R_TYPE, 0, INPUT_FIELD, N_A, INPUT_FIELD, N_A, INPUT_FIELD, 2},
-    {"sra", R_TYPE, 0, INPUT_FIELD, N_A, INPUT_FIELD, N_A, INPUT_FIELD, 3},
-    {"add", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 32},
-    {"addu", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 33},
-    {"sub", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 34},
-    {"subu", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 35},
-    {"and", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 36},
-    {"or", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 37},
-    {"xor", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 38},
-    {"nor", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 39},
-    {"slt", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 42},
-    {"sltu", R_TYPE, 0, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, 0, 43},
-    {"bgez", I_TYPE, 1, N_A, INPUT_FIELD, 1, INPUT_FIELD, N_A, N_A},
-    {"bltz", I_TYPE, 1, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
-    {"bne", I_TYPE, 5, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"blez", I_TYPE, 6, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
-    {"bgtz", I_TYPE, 7, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
-    {"beq", I_TYPE, 4, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"addi", I_TYPE, 8, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"addiu", I_TYPE, 9, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"slti", I_TYPE, 10, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"sltiu", I_TYPE, 11, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"andi", I_TYPE, 12, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"ori", I_TYPE, 13, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"xori", I_TYPE, 14, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lui", I_TYPE, 15, N_A, 0, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lb", I_TYPE, 32, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lh", I_TYPE, 33, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lw", I_TYPE, 35, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lbu", I_TYPE, 36, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lhu", I_TYPE, 37, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"sb", I_TYPE, 40, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"sh", I_TYPE, 41, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"sw", I_TYPE, 43, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lwcl", I_TYPE, 49, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"swcl", I_TYPE, 56, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"sll"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 0  },
+    {"srl"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 2  },
+    {"sra"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 3  },
+    {"sllv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 4  },
+    {"srlv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 6  },
+    {"srav"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 7  },
+    {"jr"      , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 8  },
+    {"jalr"    , R_TYPE, 0 , 31         , INPUT_FIELD, 0          , N_A        , 0          , 9  },
+    {"syscall" , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 12 },
+    {"break"   , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 13 },
+    {"mfhi"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 16 },
+    {"mthi"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 17 },
+    {"mflo"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 18 },
+    {"mtlo"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 19 },
+    {"mult"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 24 },
+    {"multu"   , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 25 },
+    {"div"     , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 26 },
+    {"divu"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 27 },
+    {"add"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 32 },
+    {"addu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 33 },
+    {"sub"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 34 },
+    {"subu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 35 },
+    {"and"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 36 },
+    {"or"      , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 37 },
+    {"xor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 38 },
+    {"nor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 39 },
+    {"slt"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 42 },
+    {"sltu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 43 },
+    {"bgez"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 1          , INPUT_FIELD, N_A        , N_A},
+    {"bltz"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
+    {"bne"     , I_TYPE, 5 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"blez"    , I_TYPE, 6 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
+    {"bgtz"    , I_TYPE, 7 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
+    {"beq"     , I_TYPE, 4 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"addi"    , I_TYPE, 8 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"addiu"   , I_TYPE, 9 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"slti"    , I_TYPE, 10, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"sltiu"   , I_TYPE, 11, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"andi"    , I_TYPE, 12, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"ori"     , I_TYPE, 13, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"xori"    , I_TYPE, 14, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lui"     , I_TYPE, 15, N_A        , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lb"      , I_TYPE, 32, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lh"      , I_TYPE, 33, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lw"      , I_TYPE, 35, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lbu"     , I_TYPE, 36, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lhu"     , I_TYPE, 37, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"sb"      , I_TYPE, 40, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"sh"      , I_TYPE, 41, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"sw"      , I_TYPE, 43, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lwcl"    , I_TYPE, 49, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"swcl"    , I_TYPE, 56, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
 };
 
 // defining register structure
@@ -212,18 +227,49 @@ void rTypeParsing(char *msg, int *rd, int *rs, int *rt, int *sa, int funct){
     char field4[20];
 
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, shamt"
-    if(funct < 4){
+    if(funct <= 3){
         sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, sa);
         *rt = getRegister(field3);
         *rd = getRegister(field2);
     }
-
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, rs"
-    if(funct > 31){
+    else if(funct <= 7){
         sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, field4);
-        *rs = getRegister(field3);
-        *rt = getRegister(field4);
         *rd = getRegister(field2);
+        *rt = getRegister(field3);
+        *rs = getRegister(field4);
+    }
+    else if(funct == 12 || funct == 13){
+        //code
+    }
+    // in this range of opcodes, the instruction follows always the following patterns: "mnemonic rd, rs, rt"
+    else if(funct >= 8){
+        // for some instructions, rd is a fixed value
+        if(*rd == INPUT_FIELD){
+            // for some instructions with variable rd, rs has a fixed value. If rs is variable, rt is also variable
+            if(*rs == INPUT_FIELD){
+                sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, field4);
+                *rs = getRegister(field3);
+                *rt = getRegister(field4);
+                *rd = getRegister(field2);
+            }
+            // if rd is variable and rs is fixed, rt is also fixed
+            else{
+                sscanf(msg, "%s %s", field1, field2);
+                *rd = getRegister(field2);
+            }
+        }
+        // if rd is fixed and rt is variable, rs is always variable
+        else if(*rt == INPUT_FIELD){
+            sscanf(msg, "%s %[^,], %s", field1, field2, field3);
+            *rs = getRegister(field2);
+            *rt = getRegister(field3);
+        }
+        // if rd and rt are fixed, rs is the only parameter
+        else if(*rs == INPUT_FIELD){
+            sscanf(msg, "%s %s", field1, field2, field3);
+            *rs = getRegister(field2);
+        }
     }
 }
 
