@@ -381,7 +381,7 @@ int main() {
 
     // reads the assembly code file
     char **msg = readFile(&numberOfLines);
-    int *data = malloc(numberOfLines);
+    unsigned *data = malloc(numberOfLines*sizeof(unsigned));
 
     instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine) * numberOfLines);
 
