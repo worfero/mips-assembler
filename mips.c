@@ -26,7 +26,7 @@ typedef struct {
     int sa;
     int funct;
     int label;
-    char opMne[30];
+    char field1[30];
 } instLine;
 
 // defining instruction code bit fields
@@ -45,30 +45,60 @@ typedef struct {
 // lookup table for opcodes
 static const Opcode opcodes[] =
 {
-    {"bgez", I_TYPE, 1, N_A, INPUT_FIELD, 1, INPUT_FIELD, N_A, N_A},
-    {"bltz", I_TYPE, 1, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
-    {"bne", I_TYPE, 5, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"blez", I_TYPE, 6, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
-    {"bgtz", I_TYPE, 7, N_A, INPUT_FIELD, 0, INPUT_FIELD, N_A, N_A},
-    {"beq", I_TYPE, 4, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"addi", I_TYPE, 8, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"addiu", I_TYPE, 9, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"slti", I_TYPE, 10, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"sltiu", I_TYPE, 11, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"andi", I_TYPE, 12, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"ori", I_TYPE, 13, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"xori", I_TYPE, 14, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lui", I_TYPE, 15, N_A, 0, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lb", I_TYPE, 32, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lh", I_TYPE, 33, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lw", I_TYPE, 35, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lbu", I_TYPE, 36, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lhu", I_TYPE, 37, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"sb", I_TYPE, 40, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"sh", I_TYPE, 41, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"sw", I_TYPE, 43, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"lwcl", I_TYPE, 49, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
-    {"swcl", I_TYPE, 56, N_A, INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A, N_A},
+    {"sll"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 0  },
+    {"srl"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 2  },
+    {"sra"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 3  },
+    {"sllv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 4  },
+    {"srlv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 6  },
+    {"srav"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 7  },
+    {"jr"      , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 8  },
+    {"jalr"    , R_TYPE, 0 , 31         , INPUT_FIELD, 0          , N_A        , 0          , 9  },
+    {"syscall" , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 12 },
+    {"break"   , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 13 },
+    {"mfhi"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 16 },
+    {"mthi"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 17 },
+    {"mflo"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 18 },
+    {"mtlo"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 19 },
+    {"mult"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 24 },
+    {"multu"   , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 25 },
+    {"div"     , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 26 },
+    {"divu"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 27 },
+    {"add"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 32 },
+    {"addu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 33 },
+    {"sub"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 34 },
+    {"subu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 35 },
+    {"and"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 36 },
+    {"or"      , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 37 },
+    {"xor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 38 },
+    {"nor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 39 },
+    {"slt"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 42 },
+    {"sltu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 43 },
+    {"bgez"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 1          , INPUT_FIELD, N_A        , N_A},
+    {"bltz"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
+    {"j"       , J_TYPE, 2 , N_A        , N_A        , N_A        , INPUT_FIELD, N_A        , N_A},
+    {"jal"     , J_TYPE, 3 , N_A        , N_A        , N_A        , INPUT_FIELD, N_A        , N_A},
+    {"bne"     , I_TYPE, 5 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"blez"    , I_TYPE, 6 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
+    {"bgtz"    , I_TYPE, 7 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
+    {"beq"     , I_TYPE, 4 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"addi"    , I_TYPE, 8 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"addiu"   , I_TYPE, 9 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"slti"    , I_TYPE, 10, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"sltiu"   , I_TYPE, 11, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"andi"    , I_TYPE, 12, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"ori"     , I_TYPE, 13, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"xori"    , I_TYPE, 14, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lui"     , I_TYPE, 15, N_A        , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lb"      , I_TYPE, 32, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lh"      , I_TYPE, 33, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lw"      , I_TYPE, 35, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lbu"     , I_TYPE, 36, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lhu"     , I_TYPE, 37, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"sb"      , I_TYPE, 40, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"sh"      , I_TYPE, 41, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"sw"      , I_TYPE, 43, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"lwcl"    , I_TYPE, 49, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
+    {"swcl"    , I_TYPE, 56, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A}
 };
 
 // defining register structure
@@ -165,6 +195,12 @@ char ** readFile(int *numberOfLines) {
     return lines;
 }
 
+void writeFile(unsigned data[], int numberOfLines){
+    FILE *file;
+    file = fopen("machine-code.bin", "wb");
+    fwrite(data, sizeof(unsigned), numberOfLines, file);
+}
+
 int getRegister(char *regMne){
     int reg;
     for(int i = 0; i <= sizeof(registers)/sizeof(registers[0]); i++){
@@ -175,10 +211,10 @@ int getRegister(char *regMne){
     return reg;
 }
 
-void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, int *sa, int *funct, char *opMne){
+void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, int *sa, int *funct, char *field1){
     // searches for the opcode in the lookup table
     for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
-        if(!strcmp(opMne, opcodes[i].mnemonic)){
+        if(!strcmp(field1, opcodes[i].mnemonic)){
             // gets the instruction code default parameters
             *op = opcodes[i].numCode;
             *type = opcodes[i].instType;
@@ -192,92 +228,171 @@ void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, i
     }
 }
 
-void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
-    char opMne[20];
-    char rtMne[20];
-    char rsMne[20];
+void rTypeParsing(char *msg, int *rd, int *rs, int *rt, int *sa, int funct){
+    char field1[20];
+    char field2[20];
+    char field3[20];
+    char field4[20];
 
-    for(int i=0; i < sizeof(msg); i++){
-        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
-        if(op < 8){
-            // for some instructions, rt is a fixed value
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, shamt"
+    if(funct <= 3){
+        sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, sa);
+        *rt = getRegister(field3);
+        *rd = getRegister(field2);
+    }
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, rs"
+    else if(funct <= 7){
+        sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, field4);
+        *rd = getRegister(field2);
+        *rt = getRegister(field3);
+        *rs = getRegister(field4);
+    }
+    else if(funct == 12 || funct == 13){
+        //code
+    }
+    // in this range of opcodes, the instruction follows always the following patterns: "mnemonic rd, rs, rt"
+    else if(funct >= 8){
+        // for some instructions, rd is a fixed value
+        if(*rd == INPUT_FIELD){
+            // for some instructions with variable rd, rs has a fixed value. If rs is variable, rt is also variable
             if(*rs == INPUT_FIELD){
-                if(*rt == INPUT_FIELD){
-                    sscanf(msg, "%s %[^,], %[^,], %d", opMne, rsMne, rtMne, imm);
-                    *rt = getRegister(rtMne);
-                    *rs = getRegister(rsMne);
-                }
-                else{
-                    sscanf(msg, "%s %[^,], %d", opMne, rsMne, imm);
-                    *rs = getRegister(rsMne);
-                }
+                sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, field4);
+                *rs = getRegister(field3);
+                *rt = getRegister(field4);
+                *rd = getRegister(field2);
+            }
+            // if rd is variable and rs is fixed, rt is also fixed
+            else{
+                sscanf(msg, "%s %s", field1, field2);
+                *rd = getRegister(field2);
             }
         }
-        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
-        else if(op < 32){
-            // for the "lui" instruction, rs is always 0
-            if(*rt == INPUT_FIELD){
-                if(*rs == INPUT_FIELD){
-                    sscanf(msg, "%s %[^,], %[^,], %d", opMne, rtMne, rsMne, imm);
-                    *rt = getRegister(rtMne);
-                    *rs = getRegister(rsMne);
-                }
-                else{
-                    sscanf(msg, "%s %[^,], %d", opMne, rtMne, imm);
-                    *rt = getRegister(rtMne);
-                }
-            }
+        // if rd is fixed and rt is variable, rs is always variable
+        else if(*rt == INPUT_FIELD){
+            sscanf(msg, "%s %[^,], %s", field1, field2, field3);
+            *rs = getRegister(field2);
+            *rt = getRegister(field3);
         }
-        // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
-        else if(op >= 32){
-            sscanf(msg, "%s %[^,], %d(%[^)])", opMne, rtMne, imm, rsMne);
-            *rt = getRegister(rtMne);
-            *rs = getRegister(rsMne);
+        // if rd and rt are fixed, rs is the only parameter
+        else if(*rs == INPUT_FIELD){
+            sscanf(msg, "%s %s", field1, field2, field3);
+            *rs = getRegister(field2);
         }
     }
 }
 
+void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
+    char field1[20];
+    char field2[20];
+    char field3[20];
+
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
+    if(op < 8){
+        // for some instructions, rt is a fixed value
+        if(*rs == INPUT_FIELD){
+            if(*rt == INPUT_FIELD){
+                sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, imm);
+                *rt = getRegister(field3);
+                *rs = getRegister(field2);
+            }
+            else{
+                sscanf(msg, "%s %[^,], %d", field1, field2, imm);
+                *rs = getRegister(field2);
+            }
+        }
+    }
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
+    else if(op < 32){
+        // for the "lui" instruction, rs is always 0
+        if(*rt == INPUT_FIELD){
+            if(*rs == INPUT_FIELD){
+                sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, imm);
+                *rt = getRegister(field2);
+                *rs = getRegister(field3);
+            }
+            else{
+                sscanf(msg, "%s %[^,], %d", field1, field2, imm);
+                *rt = getRegister(field2);
+            }
+        }
+    }
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
+    else if(op >= 32){
+        sscanf(msg, "%s %[^,], %d(%[^)])", field1, field2, imm, field3);
+        *rt = getRegister(field2);
+        *rs = getRegister(field3);
+    }
+}
+
+void jTypeParsing(char *msg, int op, int *offset){
+    char field1[20];
+    sscanf(msg, "%s %d", field1, offset);
+}
+
+instructionParsing(int numberOfLines, char *msg, instLine *cur_line){
+    // gets opcode mnemonics
+    sscanf(msg, "%s ", cur_line->field1);
+
+    // gets default parameters for the opcode using the lookup table
+    getDefaultParams(&cur_line->op, &cur_line->type, &cur_line->rd, &cur_line->rs, 
+                        &cur_line->rt, &cur_line->imm, &cur_line->sa, &cur_line->funct, cur_line->field1);
+    switch(cur_line->type){
+        case R_TYPE:
+            rTypeParsing(msg, &cur_line->rd, &cur_line->rs, &cur_line->rt, &cur_line->sa, cur_line->funct);
+            break;
+        case I_TYPE:
+            iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm);
+            break;
+        case J_TYPE:
+            jTypeParsing(msg, cur_line->op, &cur_line->imm);
+            break;
+    }
+    // frees allocated memory to prevent leaks
+    free(msg);
+}
+
 // generates an I-TYPE instruction based on input values
-unsigned generateInstruction(unsigned opField, unsigned rsField, unsigned rtField, unsigned immField){
+unsigned generateInstruction(instLine inst){
     unsigned result;
-    opField = opField << 26; // bit shift for the opcode in the instruction
-    rsField = rsField << 21; // bit shift for the rs in the instruction
-    rtField = rtField << 16; // bit shift for the rt in the instruction
-    result = opField + rsField + rtField + immField;
+    if(inst.op != 0){
+        inst.op = inst.op << 26; // bit shift for the opcode in the instruction
+        inst.rs = inst.rs << 21; // bit shift for the rs in the instruction
+        inst.rt = inst.rt << 16; // bit shift for the rt in the instruction
+        result = inst.op + inst.rs + inst.rt + inst.imm;
+    }
+    else if(inst.op == 2 || inst.op == 3){
+        inst.op = inst.op << 26; // bit shift for the opcode in the instruction
+        result = inst.op + inst.imm;
+    }
+    else{
+        inst.op = inst.op << 26; // bit shift for the opcode in the instruction
+        inst.rs = inst.rs << 21; // bit shift for the rs in the instruction
+        inst.rt = inst.rt << 16; // bit shift for the rt in the instruction
+        inst.rd = inst.rd << 11; // bit shift for the rd in the instruction
+        inst.sa = inst.sa << 6; // bit shift for the sa in the instruction
+        result = inst.op + inst.rs + inst.rt + inst.rd + inst.sa + inst.funct;
+    }
     return result;
 }
 
 int main() {
-    char zero[] = {'0'};
     bool isError = false;
     int numberOfLines = 0;
 
     // reads the assembly code file
     char **msg = readFile(&numberOfLines);
+    int *data = malloc(numberOfLines);
 
-    instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine));
-    
+    instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine) * numberOfLines);
+
     for(int i = 0; i < numberOfLines; i++){
-        // gets opcode mnemonics
-        sscanf(msg[i], "%s ", instLines[i].opMne);
-
-        // gets default parameters for the opcode using the lookup table
-        getDefaultParams(&instLines[i].op, &instLines[i].type, &instLines[i].rd, &instLines[i].rs, 
-                            &instLines[i].rt, &instLines[i].imm, &instLines[i].sa, &instLines[i].funct, instLines[i].opMne);
-        if(instLines[i].type == I_TYPE){
-            iTypeParsing(msg[i], instLines[i].op, &instLines[i].rt, &instLines[i].rs, &instLines[i].imm);
-        }
-
-        // frees allocated memory to prevent leaks
-        free(msg[i]);
+        instructionParsing(numberOfLines, msg[i], &instLines[i]);
     }
 
     free(msg);
 
-    //imm = strtol(immmsg[0], (char **)NULL, 10);
-
     //if(op < 0 || op > MAX_OPCODE_NUM){
-    //    printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", opMne);
+    //    printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", field1);
     //    isError = true;
     //}
     //if(rt < 0 || rt > MAX_REG_NUM){
@@ -293,8 +408,12 @@ int main() {
     //    isError = true;
     //}
     for(int i = 0; i < numberOfLines; i++){
-        if(!isError){
-            printf("0x%04x\n", generateInstruction(instLines[i].op, instLines[i].rs, instLines[i].rt, instLines[i].imm));
-        }
+        //if(!isError){
+        //    printf("0x%04x\n", generateInstruction(instLines[i]));
+        //}
+        printf("0x%04x\n", generateInstruction(instLines[i]));
+        data[i] = generateInstruction(instLines[i]);
     }
+    free(instLines);
+    writeFile(data, numberOfLines);
 }
