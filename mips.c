@@ -13,7 +13,12 @@
 #define MAX_OPCODE_NUM  56       // Maximum number of registers available
 
 #define BUF_SIZE_FILE   65536    // Maximum buffer for a file
-#define BUF_SIZE_LINE   20       // Maximum buffer for a line
+#define BUF_SIZE_LINE   50       // Maximum buffer for a line
+
+typedef struct {
+    int index;
+    char mnemonic[10];
+} labelFinder;
 
 typedef struct {
     // declaring instruction variables
@@ -25,7 +30,6 @@ typedef struct {
     int imm;
     int sa;
     int funct;
-    int label;
     char field1[30];
 } instLine;
 
@@ -45,34 +49,34 @@ typedef struct {
 // lookup table for opcodes
 static const Opcode opcodes[] =
 {
-    {"sll"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 0  },
-    {"srl"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 2  },
-    {"sra"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 3  },
-    {"sllv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 4  },
-    {"srlv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 6  },
-    {"srav"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 7  },
-    {"jr"      , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 8  },
-    {"jalr"    , R_TYPE, 0 , 31         , INPUT_FIELD, 0          , N_A        , 0          , 9  },
-    {"syscall" , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 12 },
-    {"break"   , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 13 },
-    {"mfhi"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 16 },
-    {"mthi"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 17 },
-    {"mflo"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 18 },
-    {"mtlo"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 19 },
-    {"mult"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 24 },
-    {"multu"   , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 25 },
-    {"div"     , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 26 },
-    {"divu"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 27 },
-    {"add"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 32 },
-    {"addu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 33 },
-    {"sub"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 34 },
-    {"subu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 35 },
-    {"and"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 36 },
-    {"or"      , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 37 },
-    {"xor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 38 },
-    {"nor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 39 },
-    {"slt"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 42 },
-    {"sltu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 43 },
+    {"sll"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 0},
+    {"srl"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 2},
+    {"sra"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 3},
+    {"sllv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 4},
+    {"srlv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 6},
+    {"srav"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 7},
+    {"jr"      , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 8},
+    {"jalr"    , R_TYPE, 0 , 31         , INPUT_FIELD, 0          , N_A        , 0          , 9},
+    {"syscall" , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 12},
+    {"break"   , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 13},
+    {"mfhi"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 16},
+    {"mthi"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 17},
+    {"mflo"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 18},
+    {"mtlo"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 19},
+    {"mult"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 24},
+    {"multu"   , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 25},
+    {"div"     , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 26},
+    {"divu"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 27},
+    {"add"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 32},
+    {"addu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 33},
+    {"sub"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 34},
+    {"subu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 35},
+    {"and"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 36},
+    {"or"      , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 37},
+    {"xor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 38},
+    {"nor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 39},
+    {"slt"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 42},
+    {"sltu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 43},
     {"bgez"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 1          , INPUT_FIELD, N_A        , N_A},
     {"bltz"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
     {"j"       , J_TYPE, 2 , N_A        , N_A        , N_A        , INPUT_FIELD, N_A        , N_A},
@@ -166,7 +170,7 @@ int countLines(FILE* file)
     return counter;
 }
 
-char ** readFile(int *numberOfLines) {
+char ** readFile(int *numberOfLines, labelFinder *labels) {
     FILE *file;
     
     file = fopen("assembly.asm", "r");
@@ -185,10 +189,21 @@ char ** readFile(int *numberOfLines) {
         lines[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
     }
 
+    int j = 0;
     for(int i = 0; i < *numberOfLines; i++){
-        fgets(lines[i], 20, file);
+        char *ptr;
+        fgets(lines[i], BUF_SIZE_LINE, file);
+        ptr = strchr(lines[i], ':');
         // removes newline from the string
         lines[i][strcspn(lines[i], "\n")] = 0;
+        // treats the instruction if it is a label
+        if(ptr != NULL){
+            char *aux = strchr(lines[i], ' ');
+            labels[j].index = i;
+            sscanf(lines[i], "%[^:]:", labels[j].mnemonic);
+            strcpy(lines[i], aux + 1);
+            j++;
+        }
     }
     fclose(file);
 
@@ -229,10 +244,10 @@ void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, i
 }
 
 void rTypeParsing(char *msg, int *rd, int *rs, int *rt, int *sa, int funct){
-    char field1[20];
-    char field2[20];
-    char field3[20];
-    char field4[20];
+    char field1[50];
+    char field2[50];
+    char field3[50];
+    char field4[50];
 
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, shamt"
     if(funct <= 3){
@@ -281,23 +296,44 @@ void rTypeParsing(char *msg, int *rd, int *rs, int *rt, int *sa, int funct){
     }
 }
 
-void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
-    char field1[20];
-    char field2[20];
-    char field3[20];
+void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm, labelFinder *labels, int index){
+    char field1[50];
+    char field2[50];
+    char field3[50];
 
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
+    //if(op < 8){
+    //    // for some instructions, rt is a fixed value
+    //    if(*rs == INPUT_FIELD){
+    //        if(*rt == INPUT_FIELD){
+    //            sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, imm);
+    //            *rt = getRegister(field3);
+    //            *rs = getRegister(field2);
+    //        }
+    //        else{
+    //            sscanf(msg, "%s %[^,], %d", field1, field2, imm);
+    //            *rs = getRegister(field2);
+    //        }
+    //    }
+    //}
+    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label"
     if(op < 8){
-        // for some instructions, rt is a fixed value
+        char label[10];
+        //for some instructions, rt is a fixed value
         if(*rs == INPUT_FIELD){
             if(*rt == INPUT_FIELD){
-                sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, imm);
+                sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, label);
                 *rt = getRegister(field3);
                 *rs = getRegister(field2);
             }
             else{
-                sscanf(msg, "%s %[^,], %d", field1, field2, imm);
+                sscanf(msg, "%s %[^,], %s", field1, field2, label);
                 *rs = getRegister(field2);
+            }
+        }
+        for(int i = 0; i < 10; i++){
+            if(!strcmp(labels[i].mnemonic, label)){
+                *imm = labels[i].index - index;
             }
         }
     }
@@ -325,11 +361,11 @@ void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm){
 }
 
 void jTypeParsing(char *msg, int op, int *offset){
-    char field1[20];
+    char field1[50];
     sscanf(msg, "%s %d", field1, offset);
 }
 
-instructionParsing(int numberOfLines, char *msg, instLine *cur_line){
+instructionParsing(int numberOfLines, char *msg, instLine *cur_line, labelFinder *labels, int index){
     // gets opcode mnemonics
     sscanf(msg, "%s ", cur_line->field1);
 
@@ -341,7 +377,7 @@ instructionParsing(int numberOfLines, char *msg, instLine *cur_line){
             rTypeParsing(msg, &cur_line->rd, &cur_line->rs, &cur_line->rt, &cur_line->sa, cur_line->funct);
             break;
         case I_TYPE:
-            iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm);
+            iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm, labels, index);
             break;
         case J_TYPE:
             jTypeParsing(msg, cur_line->op, &cur_line->imm);
@@ -378,15 +414,16 @@ unsigned generateInstruction(instLine inst){
 int main() {
     bool isError = false;
     int numberOfLines = 0;
+    labelFinder labels[10];
 
     // reads the assembly code file
-    char **msg = readFile(&numberOfLines);
+    char **msg = readFile(&numberOfLines, labels);
     unsigned *data = malloc(numberOfLines*sizeof(unsigned));
 
     instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine) * numberOfLines);
 
     for(int i = 0; i < numberOfLines; i++){
-        instructionParsing(numberOfLines, msg[i], &instLines[i]);
+        instructionParsing(numberOfLines, msg[i], &instLines[i], labels, i + 1);
     }
 
     free(msg);
