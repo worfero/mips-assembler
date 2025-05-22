@@ -148,6 +148,18 @@ static const Register registers[] =
     {"$ra", 31}     //procedure return address
 };
 
+bool checkEmptyString(const char *str){
+    if(str == NULL || strlen(str) == 0){
+        return true;
+    }
+    for(int i = 0; str[i] != '\0'; i++) {
+        if(str[i] != ' ' && str[i] != '\n'){
+            return false;
+        }
+    }
+    return true;
+}
+
 int countLines(FILE* file)
 {
     char buf[BUF_SIZE_FILE];
@@ -159,9 +171,11 @@ int countLines(FILE* file)
             return -1;
 
         int i;
-        for(i = 0; i < res; i++)
-            if (buf[i] == '\n')
+        for(i = 0; i < res - 1; i++)
+            // ignores empty or blank lines
+            if (buf[i] == '\n' && buf[i+1] != '\n' && buf[i+1] != ' '){
                 counter++;
+            }
 
         if(feof(file))
             break;
@@ -191,18 +205,24 @@ char ** readFile(int *numberOfLines, labelFinder *labels) {
 
     int j = 0;
     for(int i = 0; i < *numberOfLines; i++){
-        char *ptr;
         fgets(lines[i], BUF_SIZE_LINE, file);
-        ptr = strchr(lines[i], ':');
-        // removes newline from the string
-        lines[i][strcspn(lines[i], "\n")] = 0;
-        // treats the instruction if it is a label
-        if(ptr != NULL){
-            char *aux = strchr(lines[i], ' ');
-            labels[j].index = i;
-            sscanf(lines[i], "%[^:]:", labels[j].mnemonic);
-            strcpy(lines[i], aux + 1);
-            j++;
+        // if the line is empty or blank, ignore it
+        if(checkEmptyString(lines[i])){
+            i--;
+        }
+        else{
+            char *ptr;
+            ptr = strchr(lines[i], ':');
+            // removes newline from the string
+            lines[i][strcspn(lines[i], "\n")] = 0;
+            // if the instruction has a label, stores it in the labels array and removes it from the line
+            if(ptr != NULL){
+                char *aux = strchr(lines[i], ' ');
+                labels[j].index = i;
+                sscanf(lines[i], "%[^:]:", labels[j].mnemonic);
+                strcpy(lines[i], aux + 1);
+                j++;
+            }
         }
     }
     fclose(file);
