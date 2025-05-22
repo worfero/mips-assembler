@@ -380,9 +380,15 @@ void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm, labelFinder *la
     }
 }
 
-void jTypeParsing(char *msg, int op, int *offset){
+void jTypeParsing(char *msg, int op, int *imm, labelFinder *labels, int index){
     char field1[50];
-    sscanf(msg, "%s %d", field1, offset);
+    char label[50];
+    sscanf(msg, "%s %s", field1, label);
+    for(int i = 0; i < 10; i++){
+        if(!strcmp(labels[i].mnemonic, label)){
+            *imm = labels[i].index;
+        }
+    }
 }
 
 instructionParsing(int numberOfLines, char *msg, instLine *cur_line, labelFinder *labels, int index){
@@ -400,7 +406,7 @@ instructionParsing(int numberOfLines, char *msg, instLine *cur_line, labelFinder
             iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm, labels, index);
             break;
         case J_TYPE:
-            jTypeParsing(msg, cur_line->op, &cur_line->imm);
+            jTypeParsing(msg, cur_line->op, &cur_line->imm, labels, index);
             break;
     }
     // frees allocated memory to prevent leaks
