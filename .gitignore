@@ -6,4 +6,8 @@ mips.pdb
 vc140.pdb
 .vscode
 assembly.asm
+<<<<<<< HEAD
 machine-code.bin
+=======
+machine-code.bin
+>>>>>>> core
