@@ -35,7 +35,7 @@ typedef struct {
 
 // defining instruction code bit fields
 typedef struct {
-    char mnemonic[7]; // mnemonic
+    char mnemonic[20]; // mnemonic
     int instType; // instruction type
     int numCode; // opcode number
     int rdField; // rd register
@@ -190,14 +190,14 @@ char ** readFile(int *numberOfLines, labelFinder *labels) {
     file = fopen("assembly.asm", "r");
     if(file == NULL) {
         perror("Error opening file");
-        return '\0';
+        return (char **)NULL;
     }
 
     *numberOfLines = countLines(file);
     
     rewind(file);
 
-    char **lines = malloc(*numberOfLines * sizeof(char**));
+    char **lines = (char **)malloc(*numberOfLines * sizeof(char**));
 
     for(int i = 0; i < *numberOfLines; i++){
         lines[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
@@ -391,7 +391,7 @@ void jTypeParsing(char *msg, int op, int *imm, labelFinder *labels, int index){
     }
 }
 
-instructionParsing(int numberOfLines, char *msg, instLine *cur_line, labelFinder *labels, int index){
+void instructionParsing(int numberOfLines, char *msg, instLine *cur_line, labelFinder *labels, int index){
     // gets opcode mnemonics
     sscanf(msg, "%s ", cur_line->field1);
 
@@ -444,7 +444,7 @@ int main() {
 
     // reads the assembly code file
     char **msg = readFile(&numberOfLines, labels);
-    unsigned *data = malloc(numberOfLines*sizeof(unsigned));
+    unsigned *data = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
 
     instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine) * numberOfLines);
 
