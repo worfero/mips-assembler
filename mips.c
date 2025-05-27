@@ -11,6 +11,7 @@
 
 #define MAX_REG_NUM     31       // Maximum number of registers available
 #define MAX_OPCODE_NUM  56       // Maximum number of registers available
+#define MAX_FILE_NAME   200      // Maximum number of characters in a file name
 
 #define BUF_SIZE_FILE   65536    // Maximum buffer for a file
 #define BUF_SIZE_LINE   50       // Maximum buffer for a line
@@ -186,8 +187,13 @@ int countLines(FILE* file)
 
 char ** readFile(int *numberOfLines, labelFinder *labels) {
     FILE *file;
+
+    char fileName[MAX_FILE_NAME]; 
+    printf("\nPlease input the name of the .asm file: ");
+    fgets(fileName, sizeof(fileName), stdin);
+    fileName[strcspn(fileName, "\n")] = 0;
     
-    file = fopen("assembly.asm", "r");
+    file = fopen(fileName, "r");
     if(file == NULL) {
         perror("Error opening file");
         return (char **)NULL;
@@ -444,6 +450,9 @@ int main() {
 
     // reads the assembly code file
     char **msg = readFile(&numberOfLines, labels);
+    while(msg == NULL){
+        msg = readFile(&numberOfLines, labels);
+    }
     unsigned *data = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
 
     instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine) * numberOfLines);
