@@ -186,8 +186,18 @@ int countLines(FILE* file)
 
 char ** readFile(int *numberOfLines, labelFinder *labels) {
     FILE *file;
+<<<<<<< Updated upstream
     
     file = fopen("assembly.asm", "r");
+=======
+
+    char fileName[MAX_FILE_NAME]; 
+    printf("\nPlease input the name of the .asm file: ");
+    fgets(fileName, sizeof(fileName), stdin);
+    fileName[strcspn(fileName, "\n")] = 0;
+
+    file = fopen(fileName, "r");
+>>>>>>> Stashed changes
     if(file == NULL) {
         perror("Error opening file");
         return (char **)NULL;
@@ -237,7 +247,9 @@ void writeFile(unsigned data[], int numberOfLines){
 }
 
 int getRegister(char *regMne){
-    int reg;
+    // register not found
+    int reg = -1;
+
     for(int i = 0; i <= sizeof(registers)/sizeof(registers[0]); i++){
         if(!strcmp(regMne, registers[i].mnemonic)){
             reg = registers[i].numCode;
@@ -259,8 +271,10 @@ void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, i
             *imm = opcodes[i].immField;
             *sa = opcodes[i].saField;
             *funct = opcodes[i].functField;
+            return;
         }
     }
+    *op = -1;
 }
 
 void rTypeParsing(char *msg, int *rd, int *rs, int *rt, int *sa, int funct){
@@ -398,16 +412,21 @@ void instructionParsing(int numberOfLines, char *msg, instLine *cur_line, labelF
     // gets default parameters for the opcode using the lookup table
     getDefaultParams(&cur_line->op, &cur_line->type, &cur_line->rd, &cur_line->rs, 
                         &cur_line->rt, &cur_line->imm, &cur_line->sa, &cur_line->funct, cur_line->field1);
-    switch(cur_line->type){
-        case R_TYPE:
-            rTypeParsing(msg, &cur_line->rd, &cur_line->rs, &cur_line->rt, &cur_line->sa, cur_line->funct);
-            break;
-        case I_TYPE:
-            iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm, labels, index);
-            break;
-        case J_TYPE:
-            jTypeParsing(msg, cur_line->op, &cur_line->imm, labels, index);
-            break;
+    if(cur_line->op == -1){
+        printf("Problem with following line: %s\nInstruction code %s not found\n", msg, cur_line->field1);
+    }
+    else{
+        switch(cur_line->type){
+            case R_TYPE:
+                rTypeParsing(msg, &cur_line->rd, &cur_line->rs, &cur_line->rt, &cur_line->sa, cur_line->funct);
+                break;
+            case I_TYPE:
+                iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm, labels, index);
+                break;
+            case J_TYPE:
+                jTypeParsing(msg, cur_line->op, &cur_line->imm, labels, index);
+                break;
+        }
     }
     // frees allocated memory to prevent leaks
     free(msg);
@@ -438,10 +457,18 @@ unsigned generateInstruction(instLine inst){
 }
 
 int main() {
-    bool isError = false;
-    int numberOfLines = 0;
-    labelFinder labels[10];
+    while(1){
+        bool isError = false;
+        int numberOfLines = 0;
+        labelFinder labels[10];
+        // reads the assembly code file
+        char **msg = readFile(&numberOfLines, labels);
+        while(msg == NULL){
+            msg = readFile(&numberOfLines, labels);
+        }
+        isError = false;
 
+<<<<<<< Updated upstream
     // reads the assembly code file
     char **msg = readFile(&numberOfLines, labels);
     unsigned *data = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
@@ -479,4 +506,38 @@ int main() {
     }
     free(instLines);
     writeFile(data, numberOfLines);
+=======
+        while(!isError){
+            unsigned *data = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
+
+            instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine) * numberOfLines);
+
+            for(int i = 0; i < numberOfLines; i++){
+                instructionParsing(numberOfLines, msg[i], &instLines[i], labels, i + 1);
+                if(instLines[i].op == -1){
+                    isError = true;
+                    break;
+                };
+            }
+
+            free(msg);
+            if(isError){
+                free(instLines);
+                break;
+            }
+            else{
+                for(int i = 0; i < numberOfLines; i++){
+                    //if(!isError){
+                    //    printf("0x%04x\n", generateInstruction(instLines[i]));
+                    //}
+                    printf("0x%04x\n", generateInstruction(instLines[i]));
+                    data[i] = generateInstruction(instLines[i]);
+                }
+                free(instLines);
+                writeFile(data, numberOfLines);
+            }
+        }
+    }
+    return 0;
+>>>>>>> Stashed changes
 }
