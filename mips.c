@@ -7,7 +7,7 @@
 #define I_TYPE          2        // I-TYPE instruction
 #define J_TYPE          3        // J-TYPE instruction
 #define N_A             0        // field not applicable
-#define INPUT_FIELD     -1       // input field
+#define INPUT_FIELD     10       // input field
 
 #define MAX_REG_NUM     31       // Maximum number of registers available
 #define MAX_OPCODE_NUM  56       // Maximum number of registers available
@@ -17,34 +17,34 @@
 #define BUF_SIZE_LINE   50       // Maximum buffer for a line
 
 typedef struct {
-    int index;
+    unsigned index;
     char mnemonic[10];
 } labelFinder;
 
 typedef struct {
     // declaring instruction variables
-    int type;
-    int op;
-    int rd;
-    int rs;
-    int rt;
+    unsigned type;
+    unsigned op;
+    unsigned rd;
+    unsigned rs;
+    unsigned rt;
     int imm;
-    int sa;
-    int funct;
+    unsigned sa;
+    unsigned funct;
     char field1[30];
 } instLine;
 
 // defining instruction code bit fields
 typedef struct {
     char mnemonic[20]; // mnemonic
-    int instType; // instruction type
-    int numCode; // opcode number
-    int rdField; // rd register
-    int rsField; // rs register
-    int rtField; // rt register
+    unsigned instType; // instruction type
+    unsigned numCode; // opcode number
+    unsigned rdField; // rd register
+    unsigned rsField; // rs register
+    unsigned rtField; // rt register
     int immField; // immediate
-    int saField; // shamt
-    int functField; // function code
+    unsigned saField; // shamt
+    unsigned functField; // function code
 } Opcode;
 
 // lookup table for opcodes
@@ -161,18 +161,17 @@ bool checkEmptyString(const char *str){
     return true;
 }
 
-int countLines(FILE* file)
+unsigned countLines(FILE* file)
 {
     char buf[BUF_SIZE_FILE];
-    int counter = 0;
+    unsigned counter = 0;
     for(;;)
     {
         size_t res = fread(buf, 1, BUF_SIZE_FILE, file);
         if(ferror(file))
-            return -1;
+            return 0;
 
-        int i;
-        for(i = 0; i < res - 1; i++)
+        for(size_t i = 0; i < res - 1; i++)
             // ignores empty or blank lines
             if (buf[i] == '\n' && buf[i+1] != '\n' && buf[i+1] != ' '){
                 counter++;
@@ -185,7 +184,7 @@ int countLines(FILE* file)
     return counter;
 }
 
-char ** readFile(int *numberOfLines, labelFinder *labels) {
+char ** readFile(unsigned *numberOfLines, labelFinder *labels) {
     FILE *file;
 
     char fileName[MAX_FILE_NAME]; 
@@ -205,12 +204,12 @@ char ** readFile(int *numberOfLines, labelFinder *labels) {
 
     char **lines = (char **)malloc(*numberOfLines * sizeof(char**));
 
-    for(int i = 0; i < *numberOfLines; i++){
+    for(unsigned i = 0; i < *numberOfLines; i++){
         lines[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
     }
 
-    int j = 0;
-    for(int i = 0; i < *numberOfLines; i++){
+    unsigned j = 0;
+    for(unsigned i = 0; i < *numberOfLines; i++){
         fgets(lines[i], BUF_SIZE_LINE, file);
         // if the line is empty or blank, ignore it
         if(checkEmptyString(lines[i])){
@@ -236,15 +235,15 @@ char ** readFile(int *numberOfLines, labelFinder *labels) {
     return lines;
 }
 
-void writeFile(unsigned data[], int numberOfLines){
+void writeFile(unsigned data[], unsigned numberOfLines){
     FILE *file;
     file = fopen("machine-code.bin", "wb");
     fwrite(data, sizeof(unsigned), numberOfLines, file);
 }
 
-int getRegister(char *regMne){
-    int reg;
-    for(int i = 0; i <= sizeof(registers)/sizeof(registers[0]); i++){
+unsigned getRegister(char *regMne){
+    unsigned reg;
+    for(unsigned i = 0; i <= (sizeof(registers))/sizeof(registers[0]); i++){
         if(!strcmp(regMne, registers[i].mnemonic)){
             reg = registers[i].numCode;
         }
@@ -252,9 +251,9 @@ int getRegister(char *regMne){
     return reg;
 }
 
-void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, int *sa, int *funct, char *field1){
+void getDefaultParams(unsigned *op, unsigned *type, unsigned *rd, unsigned *rs, unsigned *rt, int *imm, unsigned *sa, unsigned *funct, char *field1){
     // searches for the opcode in the lookup table
-    for(int i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
+    for(unsigned i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
         if(!strcmp(field1, opcodes[i].mnemonic)){
             // gets the instruction code default parameters
             *op = opcodes[i].numCode;
@@ -269,7 +268,7 @@ void getDefaultParams(int *op, int *type, int *rd, int *rs, int *rt, int *imm, i
     }
 }
 
-void rTypeParsing(char *msg, int *rd, int *rs, int *rt, int *sa, int funct){
+void rTypeParsing(char *msg, unsigned *rd, unsigned *rs, unsigned *rt, unsigned *sa, unsigned funct){
     char field1[50];
     char field2[50];
     char field3[50];
@@ -277,7 +276,7 @@ void rTypeParsing(char *msg, int *rd, int *rs, int *rt, int *sa, int funct){
 
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, shamt"
     if(funct <= 3){
-        sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, sa);
+        sscanf(msg, "%s %[^,], %[^,], %u", field1, field2, field3, sa);
         *rt = getRegister(field3);
         *rd = getRegister(field2);
     }
@@ -316,13 +315,13 @@ void rTypeParsing(char *msg, int *rd, int *rs, int *rt, int *sa, int funct){
         }
         // if rd and rt are fixed, rs is the only parameter
         else if(*rs == INPUT_FIELD){
-            sscanf(msg, "%s %s", field1, field2, field3);
+            sscanf(msg, "%s %s", field1, field2);
             *rs = getRegister(field2);
         }
     }
 }
 
-void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm, labelFinder *labels, int index){
+void iTypeParsing(char *msg, unsigned op, unsigned *rt, unsigned *rs, int *imm, labelFinder *labels, unsigned index){
     char field1[50];
     char field2[50];
     char field3[50];
@@ -357,9 +356,9 @@ void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm, labelFinder *la
                 *rs = getRegister(field2);
             }
         }
-        for(int i = 0; i < 10; i++){
+        for(unsigned i = 0; i < 10; i++){
             if(!strcmp(labels[i].mnemonic, label)){
-                *imm = labels[i].index - index;
+                *imm = (int)(labels[i].index - index);
             }
         }
     }
@@ -386,18 +385,18 @@ void iTypeParsing(char *msg, int op, int *rt, int *rs, int *imm, labelFinder *la
     }
 }
 
-void jTypeParsing(char *msg, int op, int *imm, labelFinder *labels, int index){
+void jTypeParsing(char *msg, int *imm, labelFinder *labels){
     char field1[50];
     char label[50];
     sscanf(msg, "%s %s", field1, label);
     for(int i = 0; i < 10; i++){
         if(!strcmp(labels[i].mnemonic, label)){
-            *imm = labels[i].index;
+            *imm = (int)labels[i].index;
         }
     }
 }
 
-void instructionParsing(int numberOfLines, char *msg, instLine *cur_line, labelFinder *labels, int index){
+void instructionParsing(char *msg, instLine *cur_line, labelFinder *labels, unsigned index){
     // gets opcode mnemonics
     sscanf(msg, "%s ", cur_line->field1);
 
@@ -412,7 +411,7 @@ void instructionParsing(int numberOfLines, char *msg, instLine *cur_line, labelF
             iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm, labels, index);
             break;
         case J_TYPE:
-            jTypeParsing(msg, cur_line->op, &cur_line->imm, labels, index);
+            jTypeParsing(msg, &cur_line->imm, labels);
             break;
     }
     // frees allocated memory to prevent leaks
@@ -426,11 +425,11 @@ unsigned generateInstruction(instLine inst){
         inst.op = inst.op << 26; // bit shift for the opcode in the instruction
         inst.rs = inst.rs << 21; // bit shift for the rs in the instruction
         inst.rt = inst.rt << 16; // bit shift for the rt in the instruction
-        result = inst.op + inst.rs + inst.rt + inst.imm;
+        result = inst.op + inst.rs + inst.rt + (unsigned)inst.imm;
     }
     else if(inst.op == 2 || inst.op == 3){
         inst.op = inst.op << 26; // bit shift for the opcode in the instruction
-        result = inst.op + inst.imm;
+        result = inst.op + (unsigned)inst.imm;
     }
     else{
         inst.op = inst.op << 26; // bit shift for the opcode in the instruction
@@ -444,8 +443,7 @@ unsigned generateInstruction(instLine inst){
 }
 
 int main() {
-    bool isError = false;
-    int numberOfLines = 0;
+    unsigned numberOfLines = 0;
     labelFinder labels[10];
 
     // reads the assembly code file
@@ -457,8 +455,8 @@ int main() {
 
     instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine) * numberOfLines);
 
-    for(int i = 0; i < numberOfLines; i++){
-        instructionParsing(numberOfLines, msg[i], &instLines[i], labels, i + 1);
+    for(unsigned i = 0; i < numberOfLines; i++){
+        instructionParsing(msg[i], &instLines[i], labels, i + 1);
     }
 
     free(msg);
@@ -479,7 +477,7 @@ int main() {
     //    printf("\nERROR: Immediate not valid. Try Again\n");
     //    isError = true;
     //}
-    for(int i = 0; i < numberOfLines; i++){
+    for(unsigned i = 0; i < numberOfLines; i++){
         //if(!isError){
         //    printf("0x%04x\n", generateInstruction(instLines[i]));
         //}
