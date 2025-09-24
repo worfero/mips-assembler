@@ -109,44 +109,45 @@ static const Opcode opcodes[] =
 // defining register structure
 typedef struct {
     char mnemonic[5]; // mnemonic
+    char alt_mne[5]; // alternate mnemonic
     unsigned numCode; // opcode number
 } Register;
 
 // saves the values of all registers available
 static const Register registers[] =
 {
-    {"$0", 0},     //the constant value 0
-    {"$at", 1},    //assembler temporary
-    {"$v0", 2},    //procedure return values
-    {"$v1", 3},
-    {"$a0", 4},    //procedure arguments
-    {"$a1", 5},
-    {"$a2", 6},
-    {"$a3", 7},
-    {"$t0", 8},    //temporary variables
-    {"$t1", 9},
-    {"$t2", 10},
-    {"$t3", 11},
-    {"$t4", 12},
-    {"$t5", 13},
-    {"$t6", 14},
-    {"$t7", 15},
-    {"$s0", 16},    //saved variables
-    {"$s1", 17},
-    {"$s2", 18},
-    {"$s3", 19},
-    {"$s4", 20},
-    {"$s5", 21},
-    {"$s6", 22},
-    {"$s7", 23},
-    {"$t8", 24},    //temporary variables
-    {"$t9", 25},
-    {"$k0", 26},    //operating system (OS) temporaries
-    {"$k1", 27},
-    {"$gp", 28},    //global pointer
-    {"$sp", 29},    //stack pointer
-    {"$fp", 30},    //frame pointer
-    {"$ra", 31}     //procedure return address
+    {"$z", "$0", 0},     //the constant value 0
+    {"$at", "$1" , 1},    //assembler temporary
+    {"$v0", "$2" , 2},    //procedure return values
+    {"$v1", "$3" , 3},
+    {"$a0", "$4" , 4},    //procedure arguments
+    {"$a1", "$5" , 5},
+    {"$a2", "$6" , 6},
+    {"$a3", "$7" , 7},
+    {"$t0", "$8" , 8},    //temporary variables
+    {"$t1", "$9" , 9},
+    {"$t2", "$10" , 10},
+    {"$t3", "$11" , 11},
+    {"$t4", "$12" , 12},
+    {"$t5", "$13" , 13},
+    {"$t6", "$14" , 14},
+    {"$t7", "$15" , 15},
+    {"$s0", "$16" , 16},    //saved variables
+    {"$s1", "$17" , 17},
+    {"$s2", "$18" , 18},
+    {"$s3", "$19" , 19},
+    {"$s4", "$20" , 20},
+    {"$s5", "$21" , 21},
+    {"$s6", "$22" , 22},
+    {"$s7", "$23" , 23},
+    {"$t8", "$24" , 24},    //temporary variables
+    {"$t9", "$25" , 25},
+    {"$k0", "$26" , 26},    //operating system (OS) temporaries
+    {"$k1", "$27" , 27},
+    {"$gp", "$28" , 28},    //global pointer
+    {"$sp", "$29" , 29},    //stack pointer
+    {"$fp", "$30" , 30},    //frame pointer
+    {"$ra", "$31" , 31}     //procedure return address
 };
 
 bool checkEmptyString(const char *str){
@@ -244,7 +245,7 @@ void writeFile(unsigned data[], unsigned numberOfLines){
 unsigned getRegister(char *regMne){
     unsigned reg;
     for(unsigned i = 0; i <= (sizeof(registers))/sizeof(registers[0]); i++){
-        if(!strcmp(regMne, registers[i].mnemonic)){
+        if(!strcmp(regMne, registers[i].mnemonic) || !strcmp(regMne, registers[i].alt_mne)){
             reg = registers[i].numCode;
         }
     }
