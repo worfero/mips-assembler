@@ -5,6 +5,7 @@ mips.obj
 mips.pdb
 vc140.pdb
 .vscode
+personal.asm
 machine-code.bin
 /build
 bash.sh
