@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #define R_TYPE          1        // R-TYPE instruction
 #define I_TYPE          2        // I-TYPE instruction
@@ -14,7 +15,7 @@
 #define MAX_FILE_NAME   200      // Maximum number of characters in a file name
 
 #define BUF_SIZE_FILE   65536    // Maximum buffer for a file
-#define BUF_SIZE_LINE   50       // Maximum buffer for a line
+#define BUF_SIZE_LINE   100      // Maximum buffer for a line
 
 typedef struct {
     unsigned index;
@@ -151,11 +152,13 @@ static const Register registers[] =
 };
 
 bool checkEmptyString(const char *str){
+    // if string is null or empty, return true
     if(str == NULL || strlen(str) == 0){
         return true;
     }
     for(int i = 0; str[i] != '\0'; i++) {
-        if(str[i] != ' ' && str[i] != '\n'){
+        // if a character is found before the end of line, return false
+        if(!isspace((unsigned char)str[i])){
             return false;
         }
     }
@@ -173,7 +176,6 @@ unsigned countLines(FILE* file)
             return 0;
 
         for(size_t i = 0; i < res - 1; i++)
-            // ignores empty or blank lines
             if (buf[i] == '\n' && buf[i+1] != '\n' && buf[i+1] != ' '){
                 counter++;
             }
@@ -209,28 +211,31 @@ char ** readFile(unsigned *numberOfLines, labelFinder *labels) {
         lines[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
     }
 
+    unsigned offset = 0;
     unsigned j = 0;
     for(unsigned i = 0; i < *numberOfLines; i++){
-        fgets(lines[i], BUF_SIZE_LINE, file);
+        fgets(lines[i - offset], BUF_SIZE_LINE, file);
         // if the line is empty or blank, ignore it
-        if(checkEmptyString(lines[i])){
-            i--;
+        if(checkEmptyString(lines[i - offset])){
+            offset++;
         }
         else{
             char *ptr;
-            ptr = strchr(lines[i], ':');
+            ptr = strchr(lines[i - offset], ':');
             // removes newline from the string
-            lines[i][strcspn(lines[i], "\n")] = 0;
+            lines[i - offset][strcspn(lines[i - offset], "\n")] = 0;
             // if the instruction has a label, stores it in the labels array and removes it from the line
             if(ptr != NULL){
-                char *aux = strchr(lines[i], ' ');
+                char *aux = strchr(lines[i - offset], ' ');
                 labels[j].index = i;
-                sscanf(lines[i], "%[^:]:", labels[j].mnemonic);
-                strcpy(lines[i], aux + 1);
+                sscanf(lines[i - offset], "%[^:]:", labels[j].mnemonic);
+                strcpy(lines[i - offset], aux + 1);
                 j++;
             }
         }
     }
+    // number of valid lines
+    *numberOfLines = *numberOfLines - offset;
     fclose(file);
 
     return lines;
