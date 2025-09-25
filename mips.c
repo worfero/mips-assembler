@@ -157,6 +157,10 @@ bool checkEmptyString(const char *str){
         return true;
     }
     for(int i = 0; str[i] != '\0'; i++) {
+        // if a '#' is found before any other character, the line is just a comment so return true
+        if(str[i] == '#'){
+            return true;
+        }
         // if a character is found before the end of line, return false
         if(!isspace((unsigned char)str[i])){
             return false;
@@ -220,10 +224,14 @@ char ** readFile(unsigned *numberOfLines, labelFinder *labels) {
             offset++;
         }
         else{
+            // checks if instruction has a label
             char *ptr;
             ptr = strchr(lines[i - offset], ':');
-            // removes newline from the string
+
+            // removes newline and comments from the string
             lines[i - offset][strcspn(lines[i - offset], "\n")] = 0;
+            lines[i - offset][strcspn(lines[i - offset], "#")] = '\0';
+
             // if the instruction has a label, stores it in the labels array and removes it from the line
             if(ptr != NULL){
                 char *aux = strchr(lines[i - offset], ' ');
