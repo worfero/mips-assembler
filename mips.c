@@ -466,7 +466,7 @@ Instruction instructionParsing(char *msg, unsigned index){
 }
 
 // generates an I-TYPE instruction based on input values
-unsigned generateInstruction(Instruction inst){
+unsigned machineCode(Instruction inst){
     unsigned result;
     if(inst.op != 0){
         inst.op = inst.op << 26; // bit shift for the opcode in the instruction
@@ -499,43 +499,36 @@ void assemble(char* fileName){
         msg = readFile(&numberOfLines, fileName);
     }
 
+    // memory allocation for binary instructions
     unsigned *data = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
 
     // instruction structure array for instruction parsing
     Instruction *instructions = (Instruction *)malloc(sizeof(Instruction) * numberOfLines);
 
+    // store parsed instructions in the array
     for(unsigned i = 0; i < numberOfLines; i++){
         instructions[i] = instructionParsing(msg[i], i + 1);
     }
 
+    // free assembly code lines array
     for(unsigned i = 0; i < numberOfLines; i++){
         free(msg[i]);
     }
     free(msg);
 
-    //if(op < 0 || op > MAX_OPCODE_NUM){
-    //    printf("\nERROR: Instruction \"%.20s\" not found. Try again\n", field1);
-    //    isError = true;
-    //}
-    //if(rt < 0 || rt > MAX_REG_NUM){
-    //    printf("\nERROR: Register rt not found. Try again\n");
-    //    isError = true;
-    //}
-    //if(rs < 0 || rs > MAX_REG_NUM){
-    //    printf("\nERROR: Register rs not found. Try again\n");
-    //    isError = true;
-    //}
-    //if((strcmp(immmsg[0], zero)) && imm == 0){
-    //    printf("\nERROR: Immediate not valid. Try Again\n");
-    //    isError = true;
-    //}
     for(unsigned i = 0; i < numberOfLines; i++){
-        //if(!isError){
-        //    printf("0x%04x\n", generateInstruction(instructions[i]));
-        //}
-        printf("0x%04x\n", generateInstruction(instructions[i]));
-        data[i] = generateInstruction(instructions[i]);
+        // generate 16-bit machine code instruction
+        unsigned binInst = machineCode(instructions[i]);
+
+        printf("0x%04x\n", binInst);
+
+        // fill machine code array
+        data[i] = binInst;
     }
+    // free instructions array
     free(instructions);
+    // write machine code to file
     writeFile(data, numberOfLines);
+    // free machine code array
+    free(data);
 }
