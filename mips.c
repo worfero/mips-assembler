@@ -13,6 +13,7 @@
 #define MAX_REG_NUM     31       // Maximum number of registers available
 #define MAX_OPCODE_NUM  56       // Maximum number of registers available
 #define MAX_FILE_NAME   200      // Maximum number of characters in a file name
+#define MAX_LABELS      100      // Maximum number of labels provided
 
 #define BUF_SIZE_FILE   65536    // Maximum buffer for a file
 #define BUF_SIZE_LINE   100      // Maximum buffer for a line
@@ -151,6 +152,38 @@ static const Register registers[] =
     {"$ra", "$31" , 31}     //procedure return address
 };
 
+void removeElement(char*** array, int sizeOfArray, int indexToRemove)
+{
+    // allocate an array with a size 1 less than the current one
+    char** temp = (char **)malloc((sizeOfArray - 1) * sizeof(char*)); 
+    for(unsigned i = 0; i < sizeOfArray - 1; i++){
+        temp[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
+    }
+
+    // if the index to be removed is not the first, copy everything before it
+    if(indexToRemove != 0){
+        for(unsigned i = 0; i < indexToRemove; i++){
+            strcpy(temp[i], (*array)[i]);
+        }
+    }
+
+    // if the index to be removed is not the last, copy everything after it
+    if(indexToRemove != (sizeOfArray - 1)){
+        for(unsigned i = indexToRemove; i < sizeOfArray - 1; i++){
+            strcpy(temp[i], (*array)[i+1]);
+        }
+    }
+
+    // free previous array memory
+    for (int i = 0; i < sizeOfArray; i++) {
+        free((*array)[i]);
+    }
+    free(*array);
+
+    // point array to the new values
+    *array = temp;
+}
+
 bool checkEmptyString(const char *str){
     // if string is null or empty, return true
     if(str == NULL || strlen(str) == 0){
@@ -180,7 +213,7 @@ unsigned countLines(FILE* file)
             return 0;
 
         for(size_t i = 0; i < res - 1; i++)
-            if (buf[i] == '\n' && buf[i+1] != '\n' && buf[i+1] != ' '){
+            if (buf[i] == '\n'){
                 counter++;
             }
 
@@ -209,41 +242,77 @@ char ** readFile(unsigned *numberOfLines, labelFinder *labels) {
     
     rewind(file);
 
-    char **lines = (char **)malloc(*numberOfLines * sizeof(char**));
+    char **lines = (char **)malloc(*numberOfLines * sizeof(char*));
 
     for(unsigned i = 0; i < *numberOfLines; i++){
         lines[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
     }
 
-    unsigned offset = 0;
-    unsigned j = 0;
+    // store assembly code lines into an array
+    unsigned deletedLines = 0;
     for(unsigned i = 0; i < *numberOfLines; i++){
-        fgets(lines[i - offset], BUF_SIZE_LINE, file);
-        // if the line is empty or blank, ignore it
-        if(checkEmptyString(lines[i - offset])){
-            offset++;
+        // temporary string to store line
+        char tempLine[BUF_SIZE_LINE];
+
+        // gets next line from file
+        fgets(tempLine, BUF_SIZE_LINE, file);
+
+        // check if it's empty
+        if(checkEmptyString(tempLine)){
+            // if it's empty, ignore it
+            deletedLines++;
         }
         else{
-            // checks if instruction has a label
-            char *ptr;
-            ptr = strchr(lines[i - offset], ':');
-
-            // removes newline and comments from the string
-            lines[i - offset][strcspn(lines[i - offset], "\n")] = 0;
-            lines[i - offset][strcspn(lines[i - offset], "#")] = '\0';
-
-            // if the instruction has a label, stores it in the labels array and removes it from the line
-            if(ptr != NULL){
-                char *aux = strchr(lines[i - offset], ' ');
-                labels[j].index = i;
-                sscanf(lines[i - offset], "%[^:]:", labels[j].mnemonic);
-                strcpy(lines[i - offset], aux + 1);
-                j++;
-            }
+            // if it's not empty, remove comments and line breaks
+            tempLine[strcspn(tempLine, "\n")] = 0;
+            tempLine[strcspn(tempLine, "#")] = '\0';
+            // store it in the array
+            strcpy(lines[i - deletedLines], tempLine);
         }
     }
-    // number of valid lines
-    *numberOfLines = *numberOfLines - offset;
+    
+    if(deletedLines > 0){
+        // adjust line array size
+        *numberOfLines = *numberOfLines - deletedLines;
+        for(unsigned i = 0; i < deletedLines; i++){
+            free(lines[i+(*numberOfLines)]);
+        }
+        lines = (char **)realloc(lines, *numberOfLines * sizeof(char*));
+    }
+
+    // check for labels
+    unsigned labelIdx = 0;
+    for(unsigned i = 0; i < *numberOfLines; i++){
+        // checks if instruction has a label
+        char *ptr;
+        ptr = strchr(lines[i], ':');
+        if(ptr != NULL){
+            char beforeLabel[BUF_SIZE_LINE];
+            char *afterLabel;
+            strcpy(beforeLabel, lines[i]);
+            strtok_r(beforeLabel, ":", &afterLabel);
+            // if it's not in the same line, left shift all elements and decrease array size
+            if(checkEmptyString(afterLabel)){
+                removeElement(&lines, *numberOfLines, i);
+                
+                labels[labelIdx].index = i;
+                *numberOfLines = *numberOfLines - 1;
+                i--;
+            }
+            // if it is, cut it away from the instruction line
+            else{
+                strcpy(lines[i], afterLabel);
+                labels[labelIdx].index = i;
+            }
+            // saves label mnemonic
+            strcpy(labels[labelIdx].mnemonic, beforeLabel);
+
+            //printf("\nLabel: %s\nIndex: %d\n", labels[labelIdx].mnemonic, labels[labelIdx].index);
+
+            labelIdx++;
+        }
+    }
+
     fclose(file);
 
     return lines;
@@ -253,11 +322,13 @@ void writeFile(unsigned data[], unsigned numberOfLines){
     FILE *file;
     file = fopen("machine-code.bin", "wb");
     fwrite(data, sizeof(unsigned), numberOfLines, file);
+
+    fclose(file);
 }
 
 unsigned getRegister(char *regMne){
     unsigned reg;
-    for(unsigned i = 0; i <= (sizeof(registers))/sizeof(registers[0]); i++){
+    for(unsigned i = 0; i < (sizeof(registers))/sizeof(registers[0]); i++){
         if(!strcmp(regMne, registers[i].mnemonic) || !strcmp(regMne, registers[i].alt_mne)){
             reg = registers[i].numCode;
         }
@@ -267,7 +338,7 @@ unsigned getRegister(char *regMne){
 
 void getDefaultParams(unsigned *op, unsigned *type, unsigned *rd, unsigned *rs, unsigned *rt, int *imm, unsigned *sa, unsigned *funct, char *field1){
     // searches for the opcode in the lookup table
-    for(unsigned i = 0; i <= sizeof(opcodes)/sizeof(opcodes[0]); i++){
+    for(unsigned i = 0; i < sizeof(opcodes)/sizeof(opcodes[0]); i++){
         if(!strcmp(field1, opcodes[i].mnemonic)){
             // gets the instruction code default parameters
             *op = opcodes[i].numCode;
@@ -340,24 +411,9 @@ void iTypeParsing(char *msg, unsigned op, unsigned *rt, unsigned *rs, int *imm, 
     char field2[50];
     char field3[50];
 
-    // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label" ps: label is an immediate
-    //if(op < 8){
-    //    // for some instructions, rt is a fixed value
-    //    if(*rs == INPUT_FIELD){
-    //        if(*rt == INPUT_FIELD){
-    //            sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, imm);
-    //            *rt = getRegister(field3);
-    //            *rs = getRegister(field2);
-    //        }
-    //        else{
-    //            sscanf(msg, "%s %[^,], %d", field1, field2, imm);
-    //            *rs = getRegister(field2);
-    //        }
-    //    }
-    //}
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label"
     if(op < 8){
-        char label[10];
+        char label[50];
         //for some instructions, rt is a fixed value
         if(*rs == INPUT_FIELD){
             if(*rt == INPUT_FIELD){
@@ -370,7 +426,7 @@ void iTypeParsing(char *msg, unsigned op, unsigned *rt, unsigned *rs, int *imm, 
                 *rs = getRegister(field2);
             }
         }
-        for(unsigned i = 0; i < 10; i++){
+        for(unsigned i = 0; i < MAX_LABELS; i++){
             if(!strcmp(labels[i].mnemonic, label)){
                 *imm = (int)(labels[i].index - index);
             }
@@ -403,7 +459,7 @@ void jTypeParsing(char *msg, int *imm, labelFinder *labels){
     char field1[50];
     char label[50];
     sscanf(msg, "%s %s", field1, label);
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < MAX_LABELS; i++){
         if(!strcmp(labels[i].mnemonic, label)){
             *imm = (int)labels[i].index;
         }
@@ -428,8 +484,6 @@ void instructionParsing(char *msg, instLine *cur_line, labelFinder *labels, unsi
             jTypeParsing(msg, &cur_line->imm, labels);
             break;
     }
-    // frees allocated memory to prevent leaks
-    free(msg);
 }
 
 // generates an I-TYPE instruction based on input values
@@ -458,7 +512,7 @@ unsigned generateInstruction(instLine inst){
 
 int main() {
     unsigned numberOfLines = 0;
-    labelFinder labels[10];
+    labelFinder labels[MAX_LABELS];
 
     // reads the assembly code file
     char **msg = readFile(&numberOfLines, labels);
@@ -467,12 +521,15 @@ int main() {
     }
     unsigned *data = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
 
-    instLine *instLines = (instLine *)malloc(sizeof(msg) * sizeof(instLine) * numberOfLines);
+    instLine *instLines = (instLine *)malloc(sizeof(instLine) * numberOfLines);
 
     for(unsigned i = 0; i < numberOfLines; i++){
         instructionParsing(msg[i], &instLines[i], labels, i + 1);
     }
 
+    for(unsigned i = 0; i < numberOfLines; i++){
+        free(msg[i]);
+    }
     free(msg);
 
     //if(op < 0 || op > MAX_OPCODE_NUM){
