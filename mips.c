@@ -96,6 +96,9 @@ static const Register registers[] =
     {"$ra", "$31" , 31}     //procedure return address
 };
 
+// array of labels
+static Label labels[MAX_LABELS];
+
 void removeElement(char*** array, int sizeOfArray, int indexToRemove){
     // allocate an array with a size 1 less than the current one
     char** temp = (char **)malloc((sizeOfArray - 1) * sizeof(char*)); 
@@ -167,31 +170,18 @@ unsigned countLines(FILE* file)
     return counter;
 }
 
-char ** readFile(unsigned *numberOfLines, labelFinder *labels) {
-    FILE *file;
-
-    char fileName[MAX_FILE_NAME]; 
-    printf("\nPlease input the name of the .asm file: ");
-    fgets(fileName, sizeof(fileName), stdin);
-    fileName[strcspn(fileName, "\n")] = 0;
-    
-    file = fopen(fileName, "r");
-    if(file == NULL) {
-        perror("Error opening file");
-        return (char **)NULL;
+char** stringMalloc(unsigned size){
+    char **str = (char **)malloc(size * sizeof(char*));
+    for(unsigned i = 0; i < size; i++){
+        str[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
     }
 
-    *numberOfLines = countLines(file);
-    
-    rewind(file);
+    return str;
+}
 
-    char **lines = (char **)malloc(*numberOfLines * sizeof(char*));
-
-    for(unsigned i = 0; i < *numberOfLines; i++){
-        lines[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
-    }
-
-    // store assembly code lines into an array
+char** storeCode(FILE* file, unsigned *numberOfLines){
+    // memory allocation for the code lines array, considering current number of lines
+    char** codeLines = stringMalloc(*numberOfLines);
     unsigned deletedLines = 0;
     for(unsigned i = 0; i < *numberOfLines; i++){
         // temporary string to store line
@@ -210,7 +200,7 @@ char ** readFile(unsigned *numberOfLines, labelFinder *labels) {
             tempLine[strcspn(tempLine, "\n")] = 0;
             tempLine[strcspn(tempLine, "#")] = '\0';
             // store it in the array
-            strcpy(lines[i - deletedLines], tempLine);
+            strcpy(codeLines[i - deletedLines], tempLine);
         }
     }
     
@@ -218,10 +208,35 @@ char ** readFile(unsigned *numberOfLines, labelFinder *labels) {
         // adjust line array size
         *numberOfLines = *numberOfLines - deletedLines;
         for(unsigned i = 0; i < deletedLines; i++){
-            free(lines[i+(*numberOfLines)]);
+            free(codeLines[i+(*numberOfLines)]);
         }
-        lines = (char **)realloc(lines, *numberOfLines * sizeof(char*));
+        codeLines = (char **)realloc(codeLines, *numberOfLines * sizeof(char*));
     }
+
+    return codeLines;
+}
+
+char** readFile(unsigned *numberOfLines, char* fileName) {
+    FILE *file;
+
+    // gets source file from the assemble() function
+    fileName[strcspn(fileName, "\n")] = 0;
+    
+    // opens assembly source file
+    file = fopen(fileName, "r");
+    if(file == NULL) {
+        perror("Error opening file");
+        return (char **)NULL;
+    }
+
+    // updates line counter, considering comments. line breaks and whitespaces
+    *numberOfLines = countLines(file);
+    
+    // rewind file to read lines
+    rewind(file);
+
+    // store assembly code lines into an array
+    char **lines = storeCode(file, numberOfLines);
 
     // check for labels
     unsigned labelIdx = 0;
@@ -349,7 +364,7 @@ void rTypeParsing(char *msg, unsigned *rd, unsigned *rs, unsigned *rt, unsigned 
     }
 }
 
-void iTypeParsing(char *msg, unsigned op, unsigned *rt, unsigned *rs, int *imm, labelFinder *labels, unsigned index){
+void iTypeParsing(char *msg, unsigned op, unsigned *rt, unsigned *rs, int *imm, unsigned index){
     char field1[50];
     char field2[50];
     char field3[50];
@@ -398,7 +413,7 @@ void iTypeParsing(char *msg, unsigned op, unsigned *rt, unsigned *rs, int *imm, 
     }
 }
 
-void jTypeParsing(char *msg, int *imm, labelFinder *labels){
+void jTypeParsing(char *msg, int *imm){
     char field1[50];
     char label[50];
     sscanf(msg, "%s %s", field1, label);
@@ -409,7 +424,7 @@ void jTypeParsing(char *msg, int *imm, labelFinder *labels){
     }
 }
 
-void instructionParsing(char *msg, instLine *cur_line, labelFinder *labels, unsigned index){
+void instructionParsing(char *msg, instLine *cur_line, unsigned index){
     // gets opcode mnemonics
     sscanf(msg, "%s ", cur_line->field1);
 
@@ -421,10 +436,10 @@ void instructionParsing(char *msg, instLine *cur_line, labelFinder *labels, unsi
             rTypeParsing(msg, &cur_line->rd, &cur_line->rs, &cur_line->rt, &cur_line->sa, cur_line->funct);
             break;
         case I_TYPE:
-            iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm, labels, index);
+            iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm, index);
             break;
         case J_TYPE:
-            jTypeParsing(msg, &cur_line->imm, labels);
+            jTypeParsing(msg, &cur_line->imm);
             break;
     }
 }
@@ -453,21 +468,22 @@ unsigned generateInstruction(instLine inst){
     return result;
 }
 
-void assemble(){
+void assemble(char* fileName){
+    // number of assembly code lines declared as a variable
     unsigned numberOfLines = 0;
-    labelFinder labels[MAX_LABELS];
 
-    // reads the assembly code file
-    char **msg = readFile(&numberOfLines, labels);
+    // reads the assembly code file and store each line of code in a string array, without comments, whitespaces and line breaks
+    char **msg = readFile(&numberOfLines, fileName);
     while(msg == NULL){
-        msg = readFile(&numberOfLines, labels);
+        msg = readFile(&numberOfLines, fileName);
     }
+
     unsigned *data = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
 
     instLine *instLines = (instLine *)malloc(sizeof(instLine) * numberOfLines);
 
     for(unsigned i = 0; i < numberOfLines; i++){
-        instructionParsing(msg[i], &instLines[i], labels, i + 1);
+        instructionParsing(msg[i], &instLines[i], i + 1);
     }
 
     for(unsigned i = 0; i < numberOfLines; i++){

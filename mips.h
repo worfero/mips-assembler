@@ -24,7 +24,7 @@
 typedef struct {
     unsigned index;
     char mnemonic[10];
-} labelFinder;
+} Label;
 
 typedef struct {
     // declaring instruction variables
@@ -65,7 +65,13 @@ bool checkEmptyString(const char *str);
 
 unsigned countLines(FILE* file);
 
-char ** readFile(unsigned *numberOfLines, labelFinder *labels);
+char** stringMalloc(unsigned size);
+
+char** storeCode(FILE* file, unsigned *numberOfLines);
+
+
+
+char** readFile(unsigned *numberOfLines, char* fileName);
 
 void writeFile(unsigned data[], unsigned numberOfLines);
 
@@ -75,14 +81,14 @@ void getDefaultParams(unsigned *op, unsigned *type, unsigned *rd, unsigned *rs, 
 
 void rTypeParsing(char *msg, unsigned *rd, unsigned *rs, unsigned *rt, unsigned *sa, unsigned funct);
 
-void iTypeParsing(char *msg, unsigned op, unsigned *rt, unsigned *rs, int *imm, labelFinder *labels, unsigned index);
+void iTypeParsing(char *msg, unsigned op, unsigned *rt, unsigned *rs, int *imm, unsigned index);
 
-void jTypeParsing(char *msg, int *imm, labelFinder *labels);
+void jTypeParsing(char *msg, int *imm);
 
-void instructionParsing(char *msg, instLine *cur_line, labelFinder *labels, unsigned index);
+void instructionParsing(char *msg, instLine *cur_line, unsigned index);
 
 unsigned generateInstruction(instLine inst);
 
-void assemble();
+void assemble(char* fileName);
 
 #endif
