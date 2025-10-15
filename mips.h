@@ -36,8 +36,7 @@ typedef struct {
     int imm;
     unsigned sa;
     unsigned funct;
-    char field1[30];
-} instLine;
+} Instruction;
 
 // defining instruction code bit fields
 typedef struct {
@@ -69,25 +68,23 @@ char** stringMalloc(unsigned size);
 
 char** storeCode(FILE* file, unsigned *numberOfLines);
 
-
-
 char** readFile(unsigned *numberOfLines, char* fileName);
 
 void writeFile(unsigned data[], unsigned numberOfLines);
 
 unsigned getRegister(char *regMne);
 
-void getDefaultParams(unsigned *op, unsigned *type, unsigned *rd, unsigned *rs, unsigned *rt, int *imm, unsigned *sa, unsigned *funct, char *field1);
+Instruction getDefaultParams(char *opmne);
 
-void rTypeParsing(char *msg, unsigned *rd, unsigned *rs, unsigned *rt, unsigned *sa, unsigned funct);
+Instruction rTypeParsing(char *msg, Instruction parsedInst);
 
-void iTypeParsing(char *msg, unsigned op, unsigned *rt, unsigned *rs, int *imm, unsigned index);
+Instruction iTypeParsing(char *msg, Instruction parsedInst, unsigned index);
 
-void jTypeParsing(char *msg, int *imm);
+Instruction jTypeParsing(char *msg, Instruction parsedInst);
 
-void instructionParsing(char *msg, instLine *cur_line, unsigned index);
+Instruction instructionParsing(char *msg, unsigned index);
 
-unsigned generateInstruction(instLine inst);
+unsigned generateInstruction(Instruction inst);
 
 void assemble(char* fileName);
 

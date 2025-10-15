@@ -203,7 +203,8 @@ char** storeCode(FILE* file, unsigned *numberOfLines){
             strcpy(codeLines[i - deletedLines], tempLine);
         }
     }
-    
+
+    // if there were any deleted lines, realloc memory
     if(deletedLines > 0){
         // adjust line array size
         *numberOfLines = *numberOfLines - deletedLines;
@@ -211,6 +212,39 @@ char** storeCode(FILE* file, unsigned *numberOfLines){
             free(codeLines[i+(*numberOfLines)]);
         }
         codeLines = (char **)realloc(codeLines, *numberOfLines * sizeof(char*));
+    }
+
+    // check for labels
+    unsigned labelIdx = 0;
+    for(unsigned i = 0; i < *numberOfLines; i++){
+        // checks if instruction has a label
+        char *ptr;
+        ptr = strchr(codeLines[i], ':');
+        if(ptr != NULL){
+            char beforeLabel[BUF_SIZE_LINE];
+            char *afterLabel;
+            strcpy(beforeLabel, codeLines[i]);
+            strtok_r(beforeLabel, ":", &afterLabel);
+            // if it's not in the same line, left shift all elements and decrease array size
+            if(checkEmptyString(afterLabel)){
+                removeElement(&codeLines, *numberOfLines, i);
+                
+                labels[labelIdx].index = i;
+                *numberOfLines = *numberOfLines - 1;
+                i--;
+            }
+            // if it is, cut it away from the instruction line
+            else{
+                strcpy(codeLines[i], afterLabel);
+                labels[labelIdx].index = i;
+            }
+            // saves label mnemonic
+            strcpy(labels[labelIdx].mnemonic, beforeLabel);
+
+            //printf("\nLabel: %s\nIndex: %d\n", labels[labelIdx].mnemonic, labels[labelIdx].index);
+
+            labelIdx++;
+        }
     }
 
     return codeLines;
@@ -235,41 +269,8 @@ char** readFile(unsigned *numberOfLines, char* fileName) {
     // rewind file to read lines
     rewind(file);
 
-    // store assembly code lines into an array
+    // store clean assembly code lines into an array
     char **lines = storeCode(file, numberOfLines);
-
-    // check for labels
-    unsigned labelIdx = 0;
-    for(unsigned i = 0; i < *numberOfLines; i++){
-        // checks if instruction has a label
-        char *ptr;
-        ptr = strchr(lines[i], ':');
-        if(ptr != NULL){
-            char beforeLabel[BUF_SIZE_LINE];
-            char *afterLabel;
-            strcpy(beforeLabel, lines[i]);
-            strtok_r(beforeLabel, ":", &afterLabel);
-            // if it's not in the same line, left shift all elements and decrease array size
-            if(checkEmptyString(afterLabel)){
-                removeElement(&lines, *numberOfLines, i);
-                
-                labels[labelIdx].index = i;
-                *numberOfLines = *numberOfLines - 1;
-                i--;
-            }
-            // if it is, cut it away from the instruction line
-            else{
-                strcpy(lines[i], afterLabel);
-                labels[labelIdx].index = i;
-            }
-            // saves label mnemonic
-            strcpy(labels[labelIdx].mnemonic, beforeLabel);
-
-            //printf("\nLabel: %s\nIndex: %d\n", labels[labelIdx].mnemonic, labels[labelIdx].index);
-
-            labelIdx++;
-        }
-    }
 
     fclose(file);
 
@@ -294,158 +295,178 @@ unsigned getRegister(char *regMne){
     return reg;
 }
 
-void getDefaultParams(unsigned *op, unsigned *type, unsigned *rd, unsigned *rs, unsigned *rt, int *imm, unsigned *sa, unsigned *funct, char *field1){
+Instruction getDefaultParams(char *opmne){
+    // generic instruction structure
+    Instruction inst;
+    
     // searches for the opcode in the lookup table
     for(unsigned i = 0; i < sizeof(opcodes)/sizeof(opcodes[0]); i++){
-        if(!strcmp(field1, opcodes[i].mnemonic)){
-            // gets the instruction code default parameters
-            *op = opcodes[i].numCode;
-            *type = opcodes[i].instType;
-            *rd = opcodes[i].rdField;
-            *rs = opcodes[i].rsField;
-            *rt = opcodes[i].rtField;
-            *imm = opcodes[i].immField;
-            *sa = opcodes[i].saField;
-            *funct = opcodes[i].functField;
+        if(!strcmp(opmne, opcodes[i].mnemonic)){
+            // fills the instruction with opcode default parameters
+            inst.op = opcodes[i].numCode;
+            inst.type = opcodes[i].instType;
+            inst.rd = opcodes[i].rdField;
+            inst.rs = opcodes[i].rsField;
+            inst.rt = opcodes[i].rtField;
+            inst.imm = opcodes[i].immField;
+            inst.sa = opcodes[i].saField;
+            inst.funct = opcodes[i].functField;
         }
     }
+
+    return inst;
 }
 
-void rTypeParsing(char *msg, unsigned *rd, unsigned *rs, unsigned *rt, unsigned *sa, unsigned funct){
+Instruction rTypeParsing(char *msg, Instruction parsedInst){
+
+    // string placeholders for instruction parsing
     char field1[50];
     char field2[50];
     char field3[50];
     char field4[50];
 
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, shamt"
-    if(funct <= 3){
-        sscanf(msg, "%s %[^,], %[^,], %u", field1, field2, field3, sa);
-        *rt = getRegister(field3);
-        *rd = getRegister(field2);
+    if(parsedInst.funct <= 3){
+        sscanf(msg, "%s %[^,], %[^,], %u", field1, field2, field3, &parsedInst.sa);
+        parsedInst.rt = getRegister(field3);
+        parsedInst.rd = getRegister(field2);
     }
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, rs"
-    else if(funct <= 7){
+    else if(parsedInst.funct <= 7){
         sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, field4);
-        *rd = getRegister(field2);
-        *rt = getRegister(field3);
-        *rs = getRegister(field4);
+        parsedInst.rd = getRegister(field2);
+        parsedInst.rt = getRegister(field3);
+        parsedInst.rs = getRegister(field4);
     }
-    else if(funct == 12 || funct == 13){
-        //code
+    else if(parsedInst.funct == 12 || parsedInst.funct == 13){
+        // code to be written
     }
     // in this range of opcodes, the instruction follows always the following patterns: "mnemonic rd, rs, rt"
-    else if(funct >= 8){
+    else if(parsedInst.funct >= 8){
         // for some instructions, rd is a fixed value
-        if(*rd == INPUT_FIELD){
+        if(parsedInst.rd == INPUT_FIELD){
             // for some instructions with variable rd, rs has a fixed value. If rs is variable, rt is also variable
-            if(*rs == INPUT_FIELD){
+            if(parsedInst.rs == INPUT_FIELD){
                 sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, field4);
-                *rs = getRegister(field3);
-                *rt = getRegister(field4);
-                *rd = getRegister(field2);
+                parsedInst.rs = getRegister(field3);
+                parsedInst.rt = getRegister(field4);
+                parsedInst.rd = getRegister(field2);
             }
             // if rd is variable and rs is fixed, rt is also fixed
             else{
                 sscanf(msg, "%s %s", field1, field2);
-                *rd = getRegister(field2);
+                parsedInst.rd = getRegister(field2);
             }
         }
         // if rd is fixed and rt is variable, rs is always variable
-        else if(*rt == INPUT_FIELD){
+        else if(parsedInst.rt == INPUT_FIELD){
             sscanf(msg, "%s %[^,], %s", field1, field2, field3);
-            *rs = getRegister(field2);
-            *rt = getRegister(field3);
+            parsedInst.rs = getRegister(field2);
+            parsedInst.rt = getRegister(field3);
         }
         // if rd and rt are fixed, rs is the only parameter
-        else if(*rs == INPUT_FIELD){
+        else if(parsedInst.rs == INPUT_FIELD){
             sscanf(msg, "%s %s", field1, field2);
-            *rs = getRegister(field2);
+            parsedInst.rs = getRegister(field2);
         }
     }
+
+    return parsedInst;
 }
 
-void iTypeParsing(char *msg, unsigned op, unsigned *rt, unsigned *rs, int *imm, unsigned index){
+Instruction iTypeParsing(char *msg, Instruction parsedInst, unsigned index){
     char field1[50];
     char field2[50];
     char field3[50];
 
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rs, rt, label"
-    if(op < 8){
+    if(parsedInst.op < 8){
         char label[50];
         //for some instructions, rt is a fixed value
-        if(*rs == INPUT_FIELD){
-            if(*rt == INPUT_FIELD){
+        if(parsedInst.rs == INPUT_FIELD){
+            if(parsedInst.rt == INPUT_FIELD){
                 sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, label);
-                *rt = getRegister(field3);
-                *rs = getRegister(field2);
+                parsedInst.rt = getRegister(field3);
+                parsedInst.rs = getRegister(field2);
             }
             else{
                 sscanf(msg, "%s %[^,], %s", field1, field2, label);
-                *rs = getRegister(field2);
+                parsedInst.rs = getRegister(field2);
             }
         }
         for(unsigned i = 0; i < MAX_LABELS; i++){
             if(!strcmp(labels[i].mnemonic, label)){
-                *imm = (int)(labels[i].index - index);
+                parsedInst.imm = (int)(labels[i].index - index);
             }
         }
     }
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
-    else if(op < 32){
+    else if(parsedInst.op < 32){
         // for the "lui" instruction, rs is always 0
-        if(*rt == INPUT_FIELD){
-            if(*rs == INPUT_FIELD){
-                sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, imm);
-                *rt = getRegister(field2);
-                *rs = getRegister(field3);
+        if(parsedInst.rt == INPUT_FIELD){
+            if(parsedInst.rs == INPUT_FIELD){
+                sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, &parsedInst.imm);
+                parsedInst.rt = getRegister(field2);
+                parsedInst.rs = getRegister(field3);
             }
             else{
-                sscanf(msg, "%s %[^,], %d", field1, field2, imm);
-                *rt = getRegister(field2);
+                sscanf(msg, "%s %[^,], %d", field1, field2, &parsedInst.imm);
+                parsedInst.rt = getRegister(field2);
             }
         }
     }
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
-    else if(op >= 32){
-        sscanf(msg, "%s %[^,], %d(%[^)])", field1, field2, imm, field3);
-        *rt = getRegister(field2);
-        *rs = getRegister(field3);
+    else if(parsedInst.op >= 32){
+        sscanf(msg, "%s %[^,], %d(%[^)])", field1, field2, &parsedInst.imm, field3);
+        parsedInst.rt = getRegister(field2);
+        parsedInst.rs = getRegister(field3);
     }
+
+    return parsedInst;
 }
 
-void jTypeParsing(char *msg, int *imm){
+Instruction jTypeParsing(char *msg, Instruction parsedInst){
     char field1[50];
     char label[50];
     sscanf(msg, "%s %s", field1, label);
     for(int i = 0; i < MAX_LABELS; i++){
         if(!strcmp(labels[i].mnemonic, label)){
-            *imm = (int)labels[i].index;
+            parsedInst.imm = (int)labels[i].index;
         }
     }
+
+    return parsedInst;
 }
 
-void instructionParsing(char *msg, instLine *cur_line, unsigned index){
-    // gets opcode mnemonics
-    sscanf(msg, "%s ", cur_line->field1);
+Instruction instructionParsing(char *msg, unsigned index){
+    // struct to hold current instruction
+    Instruction cur_inst;
+
+    // opcode mnemonic for opcode identification
+    char opmne[10];
+    // gets current instruction's opcode mnemonic
+    sscanf(msg, "%s ", opmne);
 
     // gets default parameters for the opcode using the lookup table
-    getDefaultParams(&cur_line->op, &cur_line->type, &cur_line->rd, &cur_line->rs, 
-                        &cur_line->rt, &cur_line->imm, &cur_line->sa, &cur_line->funct, cur_line->field1);
-    switch(cur_line->type){
+    cur_inst = getDefaultParams(opmne);
+
+    switch(cur_inst.type){
         case R_TYPE:
-            rTypeParsing(msg, &cur_line->rd, &cur_line->rs, &cur_line->rt, &cur_line->sa, cur_line->funct);
+            cur_inst = rTypeParsing(msg, cur_inst);
             break;
         case I_TYPE:
-            iTypeParsing(msg, cur_line->op, &cur_line->rt, &cur_line->rs, &cur_line->imm, index);
+            cur_inst = iTypeParsing(msg, cur_inst, index);
             break;
         case J_TYPE:
-            jTypeParsing(msg, &cur_line->imm);
+            cur_inst = jTypeParsing(msg, cur_inst);
             break;
     }
+
+    return cur_inst;
 }
 
 // generates an I-TYPE instruction based on input values
-unsigned generateInstruction(instLine inst){
+unsigned generateInstruction(Instruction inst){
     unsigned result;
     if(inst.op != 0){
         inst.op = inst.op << 26; // bit shift for the opcode in the instruction
@@ -480,10 +501,11 @@ void assemble(char* fileName){
 
     unsigned *data = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
 
-    instLine *instLines = (instLine *)malloc(sizeof(instLine) * numberOfLines);
+    // instruction structure array for instruction parsing
+    Instruction *instructions = (Instruction *)malloc(sizeof(Instruction) * numberOfLines);
 
     for(unsigned i = 0; i < numberOfLines; i++){
-        instructionParsing(msg[i], &instLines[i], i + 1);
+        instructions[i] = instructionParsing(msg[i], i + 1);
     }
 
     for(unsigned i = 0; i < numberOfLines; i++){
@@ -509,11 +531,11 @@ void assemble(char* fileName){
     //}
     for(unsigned i = 0; i < numberOfLines; i++){
         //if(!isError){
-        //    printf("0x%04x\n", generateInstruction(instLines[i]));
+        //    printf("0x%04x\n", generateInstruction(instructions[i]));
         //}
-        printf("0x%04x\n", generateInstruction(instLines[i]));
-        data[i] = generateInstruction(instLines[i]);
+        printf("0x%04x\n", generateInstruction(instructions[i]));
+        data[i] = generateInstruction(instructions[i]);
     }
-    free(instLines);
+    free(instructions);
     writeFile(data, numberOfLines);
 }
