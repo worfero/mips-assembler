@@ -1,53 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <ctype.h>
-
-#define R_TYPE          1        // R-TYPE instruction
-#define I_TYPE          2        // I-TYPE instruction
-#define J_TYPE          3        // J-TYPE instruction
-#define N_A             0        // field not applicable
-#define INPUT_FIELD     10       // input field
-
-#define MAX_REG_NUM     31       // Maximum number of registers available
-#define MAX_OPCODE_NUM  56       // Maximum number of registers available
-#define MAX_FILE_NAME   200      // Maximum number of characters in a file name
-#define MAX_LABELS      100      // Maximum number of labels provided
-
-#define BUF_SIZE_FILE   65536    // Maximum buffer for a file
-#define BUF_SIZE_LINE   100      // Maximum buffer for a line
-
-typedef struct {
-    unsigned index;
-    char mnemonic[10];
-} labelFinder;
-
-typedef struct {
-    // declaring instruction variables
-    unsigned type;
-    unsigned op;
-    unsigned rd;
-    unsigned rs;
-    unsigned rt;
-    int imm;
-    unsigned sa;
-    unsigned funct;
-    char field1[30];
-} instLine;
-
-// defining instruction code bit fields
-typedef struct {
-    char mnemonic[20]; // mnemonic
-    unsigned instType; // instruction type
-    unsigned numCode; // opcode number
-    unsigned rdField; // rd register
-    unsigned rsField; // rs register
-    unsigned rtField; // rt register
-    int immField; // immediate
-    unsigned saField; // shamt
-    unsigned functField; // function code
-} Opcode;
+#include "mips.h"
 
 // lookup table for opcodes
 static const Opcode opcodes[] =
@@ -108,13 +59,6 @@ static const Opcode opcodes[] =
     {"swcl"    , I_TYPE, 56, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A}
 };
 
-// defining register structure
-typedef struct {
-    char mnemonic[5]; // mnemonic
-    char alt_mne[5]; // alternate mnemonic
-    unsigned numCode; // opcode number
-} Register;
-
 // saves the values of all registers available
 static const Register registers[] =
 {
@@ -152,8 +96,7 @@ static const Register registers[] =
     {"$ra", "$31" , 31}     //procedure return address
 };
 
-void removeElement(char*** array, int sizeOfArray, int indexToRemove)
-{
+void removeElement(char*** array, int sizeOfArray, int indexToRemove){
     // allocate an array with a size 1 less than the current one
     char** temp = (char **)malloc((sizeOfArray - 1) * sizeof(char*)); 
     for(unsigned i = 0; i < sizeOfArray - 1; i++){
@@ -510,7 +453,7 @@ unsigned generateInstruction(instLine inst){
     return result;
 }
 
-int main() {
+void assemble(){
     unsigned numberOfLines = 0;
     labelFinder labels[MAX_LABELS];
 
