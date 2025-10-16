@@ -101,10 +101,7 @@ static Label labels[MAX_LABELS];
 
 void removeElement(char*** array, int sizeOfArray, int indexToRemove){
     // allocate an array with a size 1 less than the current one
-    char** temp = (char **)malloc((sizeOfArray - 1) * sizeof(char*)); 
-    for(unsigned i = 0; i < sizeOfArray - 1; i++){
-        temp[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));
-    }
+    char** temp = stringMalloc(sizeOfArray - 1);
 
     // if the index to be removed is not the first, copy everything before it
     if(indexToRemove != 0){
@@ -317,23 +314,22 @@ Instruction getDefaultParams(char *opmne){
     return inst;
 }
 
-Instruction rTypeParsing(char *msg, Instruction parsedInst){
+Instruction rTypeParsing(char *arguments, Instruction parsedInst){
 
     // string placeholders for instruction parsing
-    char field1[50];
-    char field2[50];
-    char field3[50];
-    char field4[50];
+    char field2[50] = "";
+    char field3[50] = "";
+    char field4[50] = "";
 
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, shamt"
     if(parsedInst.funct <= 3){
-        sscanf(msg, "%s %[^,], %[^,], %u", field1, field2, field3, &parsedInst.sa);
+        sscanf(arguments, "%[^,],%[^,],%u", field2, field3, &parsedInst.sa);
         parsedInst.rt = getRegister(field3);
         parsedInst.rd = getRegister(field2);
     }
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, rs"
     else if(parsedInst.funct <= 7){
-        sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, field4);
+        sscanf(arguments, "%[^,],%[^,],%s", field2, field3, field4);
         parsedInst.rd = getRegister(field2);
         parsedInst.rt = getRegister(field3);
         parsedInst.rs = getRegister(field4);
@@ -347,26 +343,26 @@ Instruction rTypeParsing(char *msg, Instruction parsedInst){
         if(parsedInst.rd == INPUT_FIELD){
             // for some instructions with variable rd, rs has a fixed value. If rs is variable, rt is also variable
             if(parsedInst.rs == INPUT_FIELD){
-                sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, field4);
+                sscanf(arguments, "%[^,],%[^,],%s", field2, field3, field4);
                 parsedInst.rs = getRegister(field3);
                 parsedInst.rt = getRegister(field4);
                 parsedInst.rd = getRegister(field2);
             }
             // if rd is variable and rs is fixed, rt is also fixed
             else{
-                sscanf(msg, "%s %s", field1, field2);
+                sscanf(arguments, "%s", field2);
                 parsedInst.rd = getRegister(field2);
             }
         }
         // if rd is fixed and rt is variable, rs is always variable
         else if(parsedInst.rt == INPUT_FIELD){
-            sscanf(msg, "%s %[^,], %s", field1, field2, field3);
+            sscanf(arguments, "%[^,],%s", field2, field3);
             parsedInst.rs = getRegister(field2);
             parsedInst.rt = getRegister(field3);
         }
         // if rd and rt are fixed, rs is the only parameter
         else if(parsedInst.rs == INPUT_FIELD){
-            sscanf(msg, "%s %s", field1, field2);
+            sscanf(arguments, "%s", field2);
             parsedInst.rs = getRegister(field2);
         }
     }
@@ -374,8 +370,7 @@ Instruction rTypeParsing(char *msg, Instruction parsedInst){
     return parsedInst;
 }
 
-Instruction iTypeParsing(char *msg, Instruction parsedInst, unsigned index){
-    char field1[50];
+Instruction iTypeParsing(char *arguments, Instruction parsedInst, unsigned index){
     char field2[50];
     char field3[50];
 
@@ -385,12 +380,12 @@ Instruction iTypeParsing(char *msg, Instruction parsedInst, unsigned index){
         //for some instructions, rt is a fixed value
         if(parsedInst.rs == INPUT_FIELD){
             if(parsedInst.rt == INPUT_FIELD){
-                sscanf(msg, "%s %[^,], %[^,], %s", field1, field2, field3, label);
+                sscanf(arguments, "%[^,],%[^,],%s", field2, field3, label);
                 parsedInst.rt = getRegister(field3);
                 parsedInst.rs = getRegister(field2);
             }
             else{
-                sscanf(msg, "%s %[^,], %s", field1, field2, label);
+                sscanf(arguments, "%[^,],%s", field2, label);
                 parsedInst.rs = getRegister(field2);
             }
         }
@@ -405,19 +400,19 @@ Instruction iTypeParsing(char *msg, Instruction parsedInst, unsigned index){
         // for the "lui" instruction, rs is always 0
         if(parsedInst.rt == INPUT_FIELD){
             if(parsedInst.rs == INPUT_FIELD){
-                sscanf(msg, "%s %[^,], %[^,], %d", field1, field2, field3, &parsedInst.imm);
+                sscanf(arguments, "%[^,],%[^,],%d", field2, field3, &parsedInst.imm);
                 parsedInst.rt = getRegister(field2);
                 parsedInst.rs = getRegister(field3);
             }
             else{
-                sscanf(msg, "%s %[^,], %d", field1, field2, &parsedInst.imm);
+                sscanf(arguments, "%[^,],%d", field2, &parsedInst.imm);
                 parsedInst.rt = getRegister(field2);
             }
         }
     }
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
     else if(parsedInst.op >= 32){
-        sscanf(msg, "%s %[^,], %d(%[^)])", field1, field2, &parsedInst.imm, field3);
+        sscanf(arguments, "%[^,],%d(%[^)])", field2, &parsedInst.imm, field3);
         parsedInst.rt = getRegister(field2);
         parsedInst.rs = getRegister(field3);
     }
@@ -425,10 +420,9 @@ Instruction iTypeParsing(char *msg, Instruction parsedInst, unsigned index){
     return parsedInst;
 }
 
-Instruction jTypeParsing(char *msg, Instruction parsedInst){
-    char field1[50];
+Instruction jTypeParsing(char *arguments, Instruction parsedInst){
     char label[50];
-    sscanf(msg, "%s %s", field1, label);
+    sscanf(arguments, "%s", label);
     for(int i = 0; i < MAX_LABELS; i++){
         if(!strcmp(labels[i].mnemonic, label)){
             parsedInst.imm = (int)labels[i].index;
@@ -444,21 +438,23 @@ Instruction instructionParsing(char *msg, unsigned index){
 
     // opcode mnemonic for opcode identification
     char opmne[10];
-    // gets current instruction's opcode mnemonic
-    sscanf(msg, "%s ", opmne);
+    // instruction arguments
+    char arguments[100];
+    // gets current instruction's opcode mnemonic and separate it from the rest of the instruction
+    sscanf(msg, "%9s %99s", opmne, arguments);
 
     // gets default parameters for the opcode using the lookup table
     cur_inst = getDefaultParams(opmne);
 
     switch(cur_inst.type){
         case R_TYPE:
-            cur_inst = rTypeParsing(msg, cur_inst);
+            cur_inst = rTypeParsing(arguments, cur_inst);
             break;
         case I_TYPE:
-            cur_inst = iTypeParsing(msg, cur_inst, index);
+            cur_inst = iTypeParsing(arguments, cur_inst, index);
             break;
         case J_TYPE:
-            cur_inst = jTypeParsing(msg, cur_inst);
+            cur_inst = jTypeParsing(arguments, cur_inst);
             break;
     }
 
