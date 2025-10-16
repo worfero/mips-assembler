@@ -7,19 +7,20 @@
 #include <stdbool.h>
 #include <ctype.h>
 
-#define R_TYPE          1        // R-TYPE instruction
-#define I_TYPE          2        // I-TYPE instruction
-#define J_TYPE          3        // J-TYPE instruction
-#define N_A             0        // field not applicable
-#define INPUT_FIELD     10       // input field
+#define R_TYPE                  1           // R-TYPE instruction
+#define I_TYPE                  2           // I-TYPE instruction
+#define J_TYPE                  3           // J-TYPE instruction
+#define N_A                     0           // field not applicable
+#define INPUT_FIELD             10          // input field
+#define INVALID_INSTRUCTION     99          // invalid instruction
 
-#define MAX_REG_NUM     31       // Maximum number of registers available
-#define MAX_OPCODE_NUM  56       // Maximum number of registers available
-#define MAX_FILE_NAME   200      // Maximum number of characters in a file name
-#define MAX_LABELS      100      // Maximum number of labels provided
+#define MAX_REG_NUM             31          // Maximum number of registers available
+#define MAX_OPCODE_NUM          56          // Maximum number of registers available
+#define MAX_FILE_NAME           200         // Maximum number of characters in a file name
+#define MAX_LABELS              100         // Maximum number of labels provided
 
-#define BUF_SIZE_FILE   65536    // Maximum buffer for a file
-#define BUF_SIZE_LINE   100      // Maximum buffer for a line
+#define BUF_SIZE_FILE           65536       // Maximum buffer for a file
+#define BUF_SIZE_LINE           100         // Maximum buffer for a line
 
 typedef struct {
     unsigned index;

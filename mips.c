@@ -1,5 +1,16 @@
 #include "mips.h"
 
+Instruction invalidInst = {
+    INVALID_INSTRUCTION,
+    N_A,
+    N_A,
+    N_A,
+    N_A,
+    N_A,
+    N_A,
+    N_A
+};
+
 // lookup table for opcodes
 static const Opcode opcodes[] =
 {
@@ -322,10 +333,11 @@ Instruction getDefaultParams(char *opmne){
             inst.imm = opcodes[i].immField;
             inst.sa = opcodes[i].saField;
             inst.funct = opcodes[i].functField;
+
+            return inst;
         }
     }
-
-    return inst;
+    return invalidInst;
 }
 
 Instruction rTypeParsing(char *arguments, Instruction parsedInst){
@@ -463,6 +475,11 @@ Instruction instructionParsing(char *msg, unsigned index){
 
     // gets default parameters for the opcode using the lookup table
     cur_inst = getDefaultParams(opmne);
+
+    if(cur_inst.type == INVALID_INSTRUCTION){
+        printf("Compilation error: opcode '%s' not found at: '%s'", opmne, msg);
+        exit(EXIT_FAILURE);
+    }
 
     switch(cur_inst.type){
         case R_TYPE:
