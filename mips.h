@@ -58,6 +58,8 @@ typedef struct {
     unsigned numCode; // opcode number
 } Register;
 
+void removeSpaces (char* str_trimmed, const char* str_untrimmed);
+
 void removeElement(char*** array, int sizeOfArray, int indexToRemove);
 
 bool checkEmptyString(const char *str);

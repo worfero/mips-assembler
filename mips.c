@@ -99,6 +99,20 @@ static const Register registers[] =
 // array of labels
 static Label labels[MAX_LABELS];
 
+void removeSpaces (char* str_trimmed, const char* str_untrimmed){
+    // logic to remove space characters from a string, a surprisingly difficult task (got a little help from stack overflow)
+    while (*str_untrimmed != '\0'){
+        // if the character is not a space, just copy it to the new string and update both pointers
+        if(!isspace(*str_untrimmed)){
+            *str_trimmed = *str_untrimmed;
+            str_trimmed++;
+        }
+        // if it is, just point to the next character
+        str_untrimmed++;
+    }
+    *str_trimmed = '\0';
+}
+
 void removeElement(char*** array, int sizeOfArray, int indexToRemove){
     // allocate an array with a size 1 less than the current one
     char** temp = stringMalloc(sizeOfArray - 1);
@@ -439,9 +453,13 @@ Instruction instructionParsing(char *msg, unsigned index){
     // opcode mnemonic for opcode identification
     char opmne[10];
     // instruction arguments
-    char arguments[100];
+    char bare_arguments[100] = "";
+    char arguments[100] = "";
     // gets current instruction's opcode mnemonic and separate it from the rest of the instruction
-    sscanf(msg, "%9s %99s", opmne, arguments);
+    sscanf(msg, "%9s %99c", opmne, bare_arguments);
+
+    // remove any whitespaces in the argument string
+    removeSpaces(arguments, bare_arguments);
 
     // gets default parameters for the opcode using the lookup table
     cur_inst = getDefaultParams(opmne);
