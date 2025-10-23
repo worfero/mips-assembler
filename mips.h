@@ -13,6 +13,7 @@
 #define N_A                     0           // field not applicable
 #define INPUT_FIELD             10          // input field
 #define INVALID_INSTRUCTION     99          // invalid instruction
+#define INVALID_REGISTER        99          // invalid register
 
 #define MAX_REG_NUM             31          // Maximum number of registers available
 #define MAX_OPCODE_NUM          56          // Maximum number of registers available

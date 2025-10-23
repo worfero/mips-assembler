@@ -312,9 +312,11 @@ unsigned getRegister(char *regMne){
     for(unsigned i = 0; i < (sizeof(registers))/sizeof(registers[0]); i++){
         if(!strcmp(regMne, registers[i].mnemonic) || !strcmp(regMne, registers[i].alt_mne)){
             reg = registers[i].numCode;
+            return reg;
         }
     }
-    return reg;
+    printf("Error: register '%s' not found\n", regMne);
+    return INVALID_REGISTER;
 }
 
 Instruction getDefaultParams(char *opmne){
@@ -337,6 +339,7 @@ Instruction getDefaultParams(char *opmne){
             return inst;
         }
     }
+    printf("Error: instruction '%s' not found\n", opmne);
     return invalidInst;
 }
 
@@ -477,7 +480,7 @@ Instruction instructionParsing(char *msg, unsigned index){
     cur_inst = getDefaultParams(opmne);
 
     if(cur_inst.type == INVALID_INSTRUCTION){
-        printf("Compilation error: opcode '%s' not found at: '%s'", opmne, msg);
+        printf("Compilation error at: '%s'\n", msg);
         exit(EXIT_FAILURE);
     }
 
@@ -491,6 +494,11 @@ Instruction instructionParsing(char *msg, unsigned index){
         case J_TYPE:
             cur_inst = jTypeParsing(arguments, cur_inst);
             break;
+    }
+
+    if(cur_inst.rd == INVALID_REGISTER || cur_inst.rs == INVALID_REGISTER || cur_inst.rt == INVALID_REGISTER){
+        printf("Compilation error at: '%s'\n", msg);
+        exit(EXIT_FAILURE);
     }
 
     return cur_inst;
