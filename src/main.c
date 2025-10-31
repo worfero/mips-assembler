@@ -1,7 +1,7 @@
 #include "mips.h"
 
 int main(){
-    char fileName[] = "assembly.asm";
+    char fileName[] = "src/assembly.asm";
     assemble(fileName);
     return 0;
 }

@@ -8,7 +8,7 @@ CFLAGS = -Wall -I$(INCLUDE_DIR)
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
-TARGET = main
+TARGET = $(OBJ_DIR)/mips
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
@@ -19,3 +19,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
+
+run: $(TARGET)
+	@echo "Running $(TARGET)..."
+	@$(TARGET)

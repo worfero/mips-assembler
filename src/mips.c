@@ -282,7 +282,7 @@ char** readFile(unsigned *numberOfLines, char* fileName) {
     file = fopen(fileName, "r");
     if(file == NULL) {
         perror("Error opening file");
-        return (char **)NULL;
+        exit(EXIT_FAILURE);
     }
 
     // updates line counter, considering comments. line breaks and whitespaces
@@ -301,7 +301,7 @@ char** readFile(unsigned *numberOfLines, char* fileName) {
 
 void writeFile(unsigned data[], unsigned numberOfLines){
     FILE *file;
-    file = fopen("machine-code.bin", "wb");
+    file = fopen("build/machine-code.bin", "wb");
     fwrite(data, sizeof(unsigned), numberOfLines, file);
 
     fclose(file);
