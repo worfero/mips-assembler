@@ -2,4 +2,5 @@ mips.exe
 .vscode
 personal.asm
 machine-code.bin
-/build
+/build/*.o
+/build/*.exe
