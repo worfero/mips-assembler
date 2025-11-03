@@ -1,7 +1,7 @@
 # mips-assembler
 MIPS assembler under development for learning purposes.
 
-It is capable of compiling any basic instruction from the MIPS instruction set.
+It is capable of compiling any basic instruction from the MIPS instruction set (pseudo-instructions not included).
 
 It also ignores empty or blank lines of instruction, so if you like to use line breaks in your assembly code, feel free.
 
