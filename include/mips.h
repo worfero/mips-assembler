@@ -7,7 +7,8 @@
 #include <stdbool.h>
 #include <ctype.h>
 
-#include <utils.h>
+#include "utils.h"
+#include "file_manager.h"
 
 #define R_TYPE                  1           // R-TYPE instruction
 #define I_TYPE                  2           // I-TYPE instruction
@@ -19,11 +20,7 @@
 
 #define MAX_REG_NUM             31          // Maximum number of registers available
 #define MAX_OPCODE_NUM          56          // Maximum number of registers available
-#define MAX_FILE_NAME           200         // Maximum number of characters in a file name
 #define MAX_LABELS              100         // Maximum number of labels provided
-
-#define BUF_SIZE_FILE           65536       // Maximum buffer for a file
-#define BUF_SIZE_LINE           100         // Maximum buffer for a line
 
 typedef unsigned char byte;
 
@@ -64,13 +61,7 @@ typedef struct {
     byte numCode; // opcode number
 } Register;
 
-unsigned countLines(FILE* file);
-
-char** storeCode(FILE* file, unsigned *numberOfLines);
-
-char** readFile(unsigned *numberOfLines, char* fileName);
-
-void writeFile(unsigned data[], unsigned numberOfLines);
+void storeLabels(char **codeLines, unsigned *numberOfLines);
 
 byte getRegister(char *regMne);
 
