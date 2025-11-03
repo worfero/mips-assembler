@@ -31,6 +31,7 @@ typedef struct {
 
 typedef struct {
     // declaring instruction variables
+    char mnemonic[20];
     byte type;
     byte op;
     byte rd;
@@ -40,19 +41,6 @@ typedef struct {
     byte sa;
     byte funct;
 } Instruction;
-
-// defining opcode type for lookup table
-typedef struct {
-    char mnemonic[20]; // mnemonic
-    byte instType; // instruction type
-    byte numCode; // opcode number
-    byte rdField; // rd register
-    byte rsField; // rs register
-    byte rtField; // rt register
-    int immField; // immediate
-    byte saField; // shamt
-    byte functField; // function code
-} Opcode;
 
 // defining register structure
 typedef struct {

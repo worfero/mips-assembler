@@ -1,7 +1,7 @@
 #include "mips.h"
 
 // lookup table for opcodes
-static const Opcode opcodes[] =
+static const Instruction opcodes[] =
 {
     {"sll"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 0},
     {"srl"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 2},
@@ -57,6 +57,11 @@ static const Opcode opcodes[] =
     {"sw"      , I_TYPE, 43, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
     {"lwcl"    , I_TYPE, 49, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
     {"swcl"    , I_TYPE, 56, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A}
+};
+
+static const char *pseudoOps[] =
+{
+    "move",
 };
 
 // saves the values of all registers available
@@ -154,14 +159,14 @@ Instruction getDefaultParams(char *opmne){
     for(unsigned i = 0; i < sizeof(opcodes)/sizeof(opcodes[0]); i++){
         if(!strcmp(opmne, opcodes[i].mnemonic)){
             // fills the instruction with opcode default parameters
-            inst.op = opcodes[i].numCode;
-            inst.type = opcodes[i].instType;
-            inst.rd = opcodes[i].rdField;
-            inst.rs = opcodes[i].rsField;
-            inst.rt = opcodes[i].rtField;
-            inst.imm = opcodes[i].immField;
-            inst.sa = opcodes[i].saField;
-            inst.funct = opcodes[i].functField;
+            inst.op = opcodes[i].op;
+            inst.type = opcodes[i].type;
+            inst.rd = opcodes[i].rd;
+            inst.rs = opcodes[i].rs;
+            inst.rt = opcodes[i].rt;
+            inst.imm = opcodes[i].imm;
+            inst.sa = opcodes[i].sa;
+            inst.funct = opcodes[i].funct;
 
             return inst;
         }
@@ -366,10 +371,11 @@ void assemble(char* fileName){
         msg = readFile(&numberOfLines, fileName);
     }
 
+    // store every label in the labels array
     storeLabels(msg, &numberOfLines);
 
     // memory allocation for binary instructions
-    unsigned *data = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
+    unsigned *binaryInstructions = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
 
     // instruction structure array for instruction parsing
     Instruction *instructions = (Instruction *)malloc(sizeof(Instruction) * numberOfLines);
@@ -392,12 +398,12 @@ void assemble(char* fileName){
         printf("0x%04x\n", binInst);
 
         // fill machine code array
-        data[i] = binInst;
+        binaryInstructions[i] = binInst;
     }
     // free instructions array
     free(instructions);
     // write machine code to file
-    writeFile(data, numberOfLines);
+    writeFile(binaryInstructions, numberOfLines);
     // free machine code array
-    free(data);
+    free(binaryInstructions);
 }
