@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <ctype.h>
 
+#include <utils.h>
+
 #define R_TYPE                  1           // R-TYPE instruction
 #define I_TYPE                  2           // I-TYPE instruction
 #define J_TYPE                  3           // J-TYPE instruction
@@ -42,7 +44,7 @@ typedef struct {
     byte funct;
 } Instruction;
 
-// defining instruction code bit fields
+// defining opcode type for lookup table
 typedef struct {
     char mnemonic[20]; // mnemonic
     byte instType; // instruction type
@@ -62,15 +64,7 @@ typedef struct {
     byte numCode; // opcode number
 } Register;
 
-void removeSpaces (char* str_trimmed, const char* str_untrimmed);
-
-void removeElement(char*** array, int sizeOfArray, int indexToRemove);
-
-bool checkEmptyString(const char *str);
-
 unsigned countLines(FILE* file);
-
-char** stringMalloc(unsigned size);
 
 char** storeCode(FILE* file, unsigned *numberOfLines);
 
