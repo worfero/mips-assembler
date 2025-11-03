@@ -307,8 +307,8 @@ void writeFile(unsigned data[], unsigned numberOfLines){
     fclose(file);
 }
 
-unsigned getRegister(char *regMne){
-    unsigned reg;
+byte getRegister(char *regMne){
+    byte reg;
     for(unsigned i = 0; i < (sizeof(registers))/sizeof(registers[0]); i++){
         if(!strcmp(regMne, registers[i].mnemonic) || !strcmp(regMne, registers[i].alt_mne)){
             reg = registers[i].numCode;
@@ -352,7 +352,7 @@ Instruction rTypeParsing(char *arguments, Instruction parsedInst){
 
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rd, rt, shamt"
     if(parsedInst.funct <= 3){
-        sscanf(arguments, "%[^,],%[^,],%u", field2, field3, &parsedInst.sa);
+        sscanf(arguments, "%[^,],%[^,],%hhu", field2, field3, &parsedInst.sa);
         parsedInst.rt = getRegister(field3);
         parsedInst.rd = getRegister(field2);
     }
@@ -508,22 +508,22 @@ Instruction instructionParsing(char *msg, unsigned index){
 unsigned machineCode(Instruction inst){
     unsigned result;
     if(inst.op != 0){
-        inst.op = inst.op << 26; // bit shift for the opcode in the instruction
-        inst.rs = inst.rs << 21; // bit shift for the rs in the instruction
-        inst.rt = inst.rt << 16; // bit shift for the rt in the instruction
-        result = inst.op + inst.rs + inst.rt + (unsigned)inst.imm;
+        unsigned op = (unsigned)inst.op << 26; // bit shift for the opcode in the instruction
+        unsigned rs = (unsigned)inst.rs << 21; // bit shift for the rs in the instruction
+        unsigned rt = (unsigned)inst.rt << 16; // bit shift for the rt in the instruction
+        result = op + rs + rt + (unsigned)inst.imm;
     }
     else if(inst.op == 2 || inst.op == 3){
-        inst.op = inst.op << 26; // bit shift for the opcode in the instruction
-        result = inst.op + (unsigned)inst.imm;
+        unsigned op = (unsigned)inst.op << 26; // bit shift for the opcode in the instruction
+        result = op + (unsigned)inst.imm;
     }
     else{
-        inst.op = inst.op << 26; // bit shift for the opcode in the instruction
-        inst.rs = inst.rs << 21; // bit shift for the rs in the instruction
-        inst.rt = inst.rt << 16; // bit shift for the rt in the instruction
-        inst.rd = inst.rd << 11; // bit shift for the rd in the instruction
-        inst.sa = inst.sa << 6; // bit shift for the sa in the instruction
-        result = inst.op + inst.rs + inst.rt + inst.rd + inst.sa + inst.funct;
+        unsigned op = (unsigned)inst.op << 26; // bit shift for the opcode in the instruction
+        unsigned rs = (unsigned)inst.rs << 21; // bit shift for the rs in the instruction
+        unsigned rt = (unsigned)inst.rt << 16; // bit shift for the rt in the instruction
+        unsigned rd = (unsigned)inst.rd << 11; // bit shift for the rd in the instruction
+        unsigned sa = (unsigned)inst.sa << 6; // bit shift for the sa in the instruction
+        result = op + rs + rt + rd + sa + inst.funct;
     }
     return result;
 }

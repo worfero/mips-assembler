@@ -23,6 +23,8 @@
 #define BUF_SIZE_FILE           65536       // Maximum buffer for a file
 #define BUF_SIZE_LINE           100         // Maximum buffer for a line
 
+typedef unsigned char byte;
+
 typedef struct {
     unsigned index;
     char mnemonic[10];
@@ -30,34 +32,34 @@ typedef struct {
 
 typedef struct {
     // declaring instruction variables
-    unsigned type;
-    unsigned op;
-    unsigned rd;
-    unsigned rs;
-    unsigned rt;
+    byte type;
+    byte op;
+    byte rd;
+    byte rs;
+    byte rt;
     int imm;
-    unsigned sa;
-    unsigned funct;
+    byte sa;
+    byte funct;
 } Instruction;
 
 // defining instruction code bit fields
 typedef struct {
     char mnemonic[20]; // mnemonic
-    unsigned instType; // instruction type
-    unsigned numCode; // opcode number
-    unsigned rdField; // rd register
-    unsigned rsField; // rs register
-    unsigned rtField; // rt register
+    byte instType; // instruction type
+    byte numCode; // opcode number
+    byte rdField; // rd register
+    byte rsField; // rs register
+    byte rtField; // rt register
     int immField; // immediate
-    unsigned saField; // shamt
-    unsigned functField; // function code
+    byte saField; // shamt
+    byte functField; // function code
 } Opcode;
 
 // defining register structure
 typedef struct {
     char mnemonic[5]; // mnemonic
     char alt_mne[5]; // alternate mnemonic
-    unsigned numCode; // opcode number
+    byte numCode; // opcode number
 } Register;
 
 void removeSpaces (char* str_trimmed, const char* str_untrimmed);
@@ -76,7 +78,7 @@ char** readFile(unsigned *numberOfLines, char* fileName);
 
 void writeFile(unsigned data[], unsigned numberOfLines);
 
-unsigned getRegister(char *regMne);
+byte getRegister(char *regMne);
 
 Instruction getDefaultParams(char *opmne);
 
