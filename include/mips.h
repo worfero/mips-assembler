@@ -62,15 +62,15 @@ void storeLabels(char **codeLines, unsigned *numberOfLines);
 
 byte getRegister(char *regMne);
 
-Instruction getDefaultParams(char *opmne);
+void getDefaultParams(char *opmne, Instruction *inst);
 
-Instruction rTypeParsing(char *msg, Instruction parsedInst);
+void rTypeParsing(char *msg, Instruction *parsedInst);
 
-Instruction iTypeParsing(char *msg, Instruction parsedInst, unsigned index);
+void iTypeParsing(char *msg, Instruction *parsedInst, unsigned index);
 
-Instruction jTypeParsing(char *msg, Instruction parsedInst);
+void jTypeParsing(char *msg, Instruction *parsedInst);
 
-Instruction instructionParsing(char *msg, unsigned index);
+void instructionParsing(char *msg, unsigned index, Instruction *cur_inst);
 
 unsigned generateInstruction(Instruction inst);
 
