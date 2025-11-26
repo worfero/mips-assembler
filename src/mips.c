@@ -63,7 +63,8 @@ static const unsigned opcodeCount = sizeof(opcodes)/sizeof(opcodes[0]);
 
 static const PseudoInstruction pseudoOps[] =
 {
-    {"move", "addu arg1, $0, arg2", "NULL", 2, false}
+    {"move", 2, false},
+    {"li", 2, false}
 };
 
 static const unsigned pseudoOpsCount = sizeof(pseudoOps)/sizeof(pseudoOps[0]);
@@ -71,7 +72,7 @@ static const unsigned pseudoOpsCount = sizeof(pseudoOps)/sizeof(pseudoOps[0]);
 // saves the values of all registers available
 static const Register registers[] =
 {
-    {"$z", "$0", 0},     //the constant value 0
+    {"$zero", "$0", 0},     //the constant value 0
     {"$at", "$1" , 1},    //assembler temporary
     {"$v0", "$2" , 2},    //procedure return values
     {"$v1", "$3" , 3},
@@ -160,7 +161,7 @@ Instruction getDefaultParams(char *opmne){
     Instruction inst;
     
     // searches for the opcode in the lookup table
-    for(unsigned i = 0; i < sizeof(opcodes)/sizeof(opcodes[0]); i++){
+    for(unsigned i = 0; i < opcodeCount; i++){
         if(!strcmp(opmne, opcodes[i].mnemonic)){
             // fills the instruction with opcode default parameters
             inst.op = opcodes[i].op;
@@ -329,6 +330,17 @@ Instruction instructionParsing(char *msg, unsigned index){
                     strcpy(opmne, "add");
                     strcpy(arguments, pseudoArguments);
                     break;
+
+                case LI:
+                    sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
+                    strcat(pseudoArguments, arg1);
+                    strcat(pseudoArguments, ",$0,");
+                    strcat(pseudoArguments, arg2);
+
+                    strcpy(opmne, "ori");
+                    strcpy(arguments, pseudoArguments);
+                    break;
+
                 default:
                     break;
             }

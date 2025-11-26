@@ -18,7 +18,8 @@
 #define INVALID_INSTRUCTION     99          // invalid instruction
 #define INVALID_REGISTER        99          // invalid register
 
-#define MOVE 0
+#define MOVE                    0           // MOVE pseudo-instruction index
+#define LI                      1           // LI pseudo-instruction index
 
 #define MAX_REG_NUM             31          // Maximum number of registers available
 #define MAX_OPCODE_NUM          56          // Maximum number of registers available
@@ -46,16 +47,14 @@ typedef struct {
 
 typedef struct {
     char mnemonic[20];
-    char firstInstReplace[100];
-    char secondInstReplace[100];
     byte argCount;
     bool isTwoInstructions;
 } PseudoInstruction;
 
 // defining register structure
 typedef struct {
-    char mnemonic[5]; // mnemonic
-    char alt_mne[5]; // alternate mnemonic
+    char mnemonic[6]; // mnemonic
+    char alt_mne[6]; // alternate mnemonic
     byte numCode; // opcode number
 } Register;
 
