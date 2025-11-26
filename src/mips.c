@@ -260,7 +260,7 @@ Instruction iTypeParsing(char *arguments, Instruction parsedInst, unsigned index
         }
         for(unsigned i = 0; i < MAX_LABELS; i++){
             if(!strcmp(labels[i].mnemonic, label)){
-                parsedInst.imm = (int)(labels[i].index - index);
+                parsedInst.imm = (short)(labels[i].index - index);
             }
         }
     }
@@ -269,19 +269,19 @@ Instruction iTypeParsing(char *arguments, Instruction parsedInst, unsigned index
         // for the "lui" instruction, rs is always 0
         if(parsedInst.rt == INPUT_FIELD){
             if(parsedInst.rs == INPUT_FIELD){
-                sscanf(arguments, "%[^,],%[^,],%d", field2, field3, &parsedInst.imm);
+                sscanf(arguments, "%[^,],%[^,],%hd", field2, field3, &parsedInst.imm);
                 parsedInst.rt = getRegister(field2);
                 parsedInst.rs = getRegister(field3);
             }
             else{
-                sscanf(arguments, "%[^,],%d", field2, &parsedInst.imm);
+                sscanf(arguments, "%[^,],%hd", field2, &parsedInst.imm);
                 parsedInst.rt = getRegister(field2);
             }
         }
     }
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, immediate(rs)"
     else if(parsedInst.op >= 32){
-        sscanf(arguments, "%[^,],%d(%[^)])", field2, &parsedInst.imm, field3);
+        sscanf(arguments, "%[^,],%hd(%[^)])", field2, &parsedInst.imm, field3);
         parsedInst.rt = getRegister(field2);
         parsedInst.rs = getRegister(field3);
     }
@@ -384,11 +384,11 @@ unsigned machineCode(Instruction inst){
         unsigned op = (unsigned)inst.op << 26; // bit shift for the opcode in the instruction
         unsigned rs = (unsigned)inst.rs << 21; // bit shift for the rs in the instruction
         unsigned rt = (unsigned)inst.rt << 16; // bit shift for the rt in the instruction
-        result = op + rs + rt + (unsigned)inst.imm;
+        result = op + rs + rt + (unsigned short)inst.imm;
     }
     else if(inst.op == 2 || inst.op == 3){
         unsigned op = (unsigned)inst.op << 26; // bit shift for the opcode in the instruction
-        result = op + (unsigned)inst.imm;
+        result = op + (unsigned short)inst.imm;
     }
     else{
         unsigned op = (unsigned)inst.op << 26; // bit shift for the opcode in the instruction
