@@ -59,6 +59,8 @@ static const Instruction opcodes[] =
     {"swcl"    , I_TYPE, 56, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A}
 };
 
+static const unsigned opcodeCount = sizeof(opcodes)/sizeof(opcodes[0]);
+
 static const PseudoInstruction pseudoOps[] =
 {
     {"move", "addu arg1, $0, arg2", "NULL", 2, false}
