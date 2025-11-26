@@ -106,6 +106,8 @@ static const Register registers[] =
     {"$ra", "$31" , 31}     //procedure return address
 };
 
+static const unsigned registerCount = sizeof(registers)/sizeof(registers[0]);
+
 // array of labels
 static Label labels[MAX_LABELS];
 
@@ -146,7 +148,7 @@ void storeLabels(char **codeLines, unsigned *numberOfLines){
 
 byte getRegister(char *regMne){
     byte reg;
-    for(unsigned i = 0; i < (sizeof(registers))/sizeof(registers[0]); i++){
+    for(unsigned i = 0; i < registerCount; i++){
         if(!strcmp(regMne, registers[i].mnemonic) || !strcmp(regMne, registers[i].alt_mne)){
             reg = registers[i].numCode;
             return reg;

@@ -40,7 +40,7 @@ typedef struct {
     byte rd;
     byte rs;
     byte rt;
-    int imm;
+    short imm;
     byte sa;
     byte funct;
 } Instruction;
