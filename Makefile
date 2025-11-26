@@ -22,4 +22,4 @@ clean:
 
 run: $(TARGET)
 	@echo "Running $(TARGET)..."
-	@$(TARGET)
+	@$(TARGET) src/asm/assembly.asm build/machine-code.bin

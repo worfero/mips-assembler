@@ -87,9 +87,9 @@ char** readFile(unsigned *numberOfLines, char* fileName) {
     return lines;
 }
 
-void writeFile(unsigned data[], unsigned numberOfLines){
+void writeFile(unsigned data[], unsigned numberOfLines, char *outputDir){
     FILE *file;
-    file = fopen("build/machine-code.bin", "wb");
+    file = fopen(outputDir, "wb");
     fwrite(data, sizeof(unsigned), numberOfLines, file);
 
     fclose(file);

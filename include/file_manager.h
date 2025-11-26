@@ -15,6 +15,6 @@ char** storeCode(FILE* file, unsigned *numberOfLines);
 
 char** readFile(unsigned *numberOfLines, char* fileName);
 
-void writeFile(unsigned data[], unsigned numberOfLines);
+void writeFile(unsigned data[], unsigned numberOfLines, char *outputDir);
 
 #endif

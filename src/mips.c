@@ -59,10 +59,12 @@ static const Instruction opcodes[] =
     {"swcl"    , I_TYPE, 56, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A}
 };
 
-static const char *pseudoOps[] =
+static const PseudoInstruction pseudoOps[] =
 {
-    "move",
+    {"move", "addu arg1, $0, arg2", "NULL", 2, false}
 };
+
+static const unsigned pseudoOpsCount = sizeof(pseudoOps)/sizeof(pseudoOps[0]);
 
 // saves the values of all registers available
 static const Register registers[] =
@@ -309,6 +311,28 @@ Instruction instructionParsing(char *msg, unsigned index){
     // remove any whitespaces in the argument string
     removeSpaces(arguments, bare_arguments);
 
+    for(unsigned j = 0; j < pseudoOpsCount; j++){
+        if(!strcmp(opmne, pseudoOps[j].mnemonic)){
+            char arg1[10];
+            char arg2[10];
+            char pseudoArguments[100] = "";
+
+            switch(j){
+                case MOVE:
+                    sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
+                    strcat(pseudoArguments, arg1);
+                    strcat(pseudoArguments, ",$0,");
+                    strcat(pseudoArguments, arg2);
+                    
+                    strcpy(opmne, "add");
+                    strcpy(arguments, pseudoArguments);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
     // gets default parameters for the opcode using the lookup table
     cur_inst = getDefaultParams(opmne);
 
@@ -361,7 +385,7 @@ unsigned machineCode(Instruction inst){
     return result;
 }
 
-void assemble(char* fileName){
+void assemble(char *fileName, char *outputDir){
     // number of assembly code lines declared as a variable
     unsigned numberOfLines = 0;
 
@@ -403,7 +427,7 @@ void assemble(char* fileName){
     // free instructions array
     free(instructions);
     // write machine code to file
-    writeFile(binaryInstructions, numberOfLines);
+    writeFile(binaryInstructions, numberOfLines, outputDir);
     // free machine code array
     free(binaryInstructions);
 }

@@ -18,6 +18,8 @@
 #define INVALID_INSTRUCTION     99          // invalid instruction
 #define INVALID_REGISTER        99          // invalid register
 
+#define MOVE 0
+
 #define MAX_REG_NUM             31          // Maximum number of registers available
 #define MAX_OPCODE_NUM          56          // Maximum number of registers available
 #define MAX_LABELS              100         // Maximum number of labels provided
@@ -42,6 +44,14 @@ typedef struct {
     byte funct;
 } Instruction;
 
+typedef struct {
+    char mnemonic[20];
+    char firstInstReplace[100];
+    char secondInstReplace[100];
+    byte argCount;
+    bool isTwoInstructions;
+} PseudoInstruction;
+
 // defining register structure
 typedef struct {
     char mnemonic[5]; // mnemonic
@@ -65,6 +75,6 @@ Instruction instructionParsing(char *msg, unsigned index);
 
 unsigned generateInstruction(Instruction inst);
 
-void assemble(char* fileName);
+void assemble(char *fileName, char *outputDir);
 
 #endif
