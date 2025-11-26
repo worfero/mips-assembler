@@ -7,7 +7,7 @@
 #include "utils.h"
 #include "file_manager.h"
 
-unsigned generateInstruction(Instruction inst);
+unsigned machineCode(Instruction inst);
 
 void assemble(char *fileName, char *outputDir);
 
