@@ -72,4 +72,6 @@ void jTypeParsing(char *msg, Instruction *parsedInst);
 
 void instructionParsing(char *msg, unsigned index, Instruction *cur_inst);
 
+void parser(char **msg, Instruction *instructions, unsigned numberOfLines);
+
 #endif

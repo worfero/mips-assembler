@@ -361,3 +361,10 @@ void instructionParsing(char *msg, unsigned index, Instruction *cur_inst){
         exit(EXIT_FAILURE);
     }
 }
+
+void parser(char **msg, Instruction *instructions, unsigned numberOfLines){
+    // store parsed instructions in the array
+    for(unsigned i = 0; i < numberOfLines; i++){
+        instructionParsing(msg[i], i + 1, &instructions[i]);
+    }
+}

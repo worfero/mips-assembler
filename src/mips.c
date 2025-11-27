@@ -43,10 +43,8 @@ void assemble(char *fileName, char *outputDir){
     // instruction structure array for instruction parsing
     Instruction *instructions = (Instruction *)malloc(sizeof(Instruction) * numberOfLines);
 
-    // store parsed instructions in the array
-    for(unsigned i = 0; i < numberOfLines; i++){
-        instructionParsing(msg[i], i + 1, &instructions[i]);
-    }
+    // start the parsing routine, from an array of text instructions separated by \n to a Instruction struct array
+    parser(msg, instructions, numberOfLines);
 
     // free assembly code lines array
     for(unsigned i = 0; i < numberOfLines; i++){
