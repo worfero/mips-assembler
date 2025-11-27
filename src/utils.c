@@ -1,6 +1,24 @@
 #include "utils.h"
 
-void removeSpaces (char* str_trimmed, const char* str_untrimmed){
+int16_t strToInt16t(const char *str){
+    char *endptr;
+    long val = strtol(str, &endptr, 10);
+
+    if (endptr == str){
+        perror("Error: variable is not a number");
+        exit(EXIT_FAILURE);
+    }
+
+    while (*endptr != '\0') {
+        if (!isspace((unsigned char)*endptr))
+            perror("Error: variable is not a number");
+        endptr++;
+    }
+
+    return (int16_t)val;
+}
+
+void removeSpaces(char* str_trimmed, const char* str_untrimmed){
     // logic to remove space characters from a string, a surprisingly difficult task (got a little help from stack overflow)
     while (*str_untrimmed != '\0'){
         // if the character is not a space, just copy it to the new string and update both pointers
@@ -14,32 +32,32 @@ void removeSpaces (char* str_trimmed, const char* str_untrimmed){
     *str_trimmed = '\0';
 }
 
-void removeElement(char*** array, int sizeOfArray, int indexToRemove){
-    // allocate an array with a size 1 less than the current one
-    char** temp = stringMalloc(sizeOfArray - 1);
-
-    // if the index to be removed is not the first, copy everything before it
-    if(indexToRemove != 0){
-        for(unsigned i = 0; i < indexToRemove; i++){
-            strcpy(temp[i], (*array)[i]);
-        }
+void trimLeadingWhitespaces(char *str){
+    if (str == NULL || *str == '\0') {
+        return;
     }
 
+    int i = 0;
+    while (str[i] != '\0' && isspace((unsigned char)str[i])) {
+        i++;
+    }
+
+    if (i > 0) {
+        int j = 0;
+        while (str[i] != '\0') {
+            str[j++] = str[i++];
+        }
+        str[j] = '\0'; // Null-terminate the new string
+    }
+}
+
+void removeElement(char **array, int sizeOfArray, int indexToRemove){
     // if the index to be removed is not the last, copy everything after it
     if(indexToRemove != (sizeOfArray - 1)){
         for(unsigned i = indexToRemove; i < sizeOfArray - 1; i++){
-            strcpy(temp[i], (*array)[i+1]);
+            strcpy(array[i], array[i+1]);
         }
     }
-
-    // free previous array memory
-    for (int i = 0; i < sizeOfArray; i++) {
-        free((*array)[i]);
-    }
-    free(*array);
-
-    // point array to the new values
-    *array = temp;
 }
 
 bool checkEmptyString(const char *str){

@@ -11,6 +11,7 @@
 #define MAX_REG_NUM             31          // Maximum number of registers available
 #define MAX_OPCODE_NUM          56          // Maximum number of registers available
 #define MAX_LABELS              100         // Maximum number of labels provided
+#define MAX_VAR                 100000      // Maximum number of variables provided
 
 #define MOVE                    0           // MOVE pseudo-instruction index
 #define LI                      1           // LI pseudo-instruction index
@@ -32,6 +33,17 @@ typedef struct {
     unsigned index;
     char mnemonic[10];
 } Label;
+
+typedef struct {
+    unsigned addr;
+    char name[50];
+    union Value{
+        int16_t _word;
+        int32_t _dword;
+        float _float;
+        bool _bool;
+    };
+} VarLabel;
 
 typedef struct {
     // declaring instruction variables

@@ -8,10 +8,15 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <stdint.h>
+
+int16_t strToInt16t(const char *str);
 
 void removeSpaces (char* str_trimmed, const char* str_untrimmed);
 
-void removeElement(char*** array, int sizeOfArray, int indexToRemove);
+void trimLeadingWhitespaces(char *str);
+
+void removeElement(char **array, int sizeOfArray, int indexToRemove);
 
 bool checkEmptyString(const char *str);
 

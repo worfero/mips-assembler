@@ -2,7 +2,7 @@
 
 // array of labels
 static Label labels[MAX_LABELS];
-static Label varLabels[MAX_LABELS];
+static VarLabel varLabels[MAX_VAR];
 
 // lookup table for opcodes
 static const Instruction opcodes[] =
@@ -113,6 +113,60 @@ static const Register registers[] =
 
 static const unsigned registerCount = sizeof(registers)/sizeof(registers[0]);
 
+void storeVarLabels(char **codeLines, unsigned *numberOfLines){
+    // search for data segment
+    char *data_ptr;
+    int dataIndex = *numberOfLines;
+    for(int i = 0; i < *numberOfLines; i++){
+        data_ptr = strstr(codeLines[i], ".data");
+        if(data_ptr != NULL){
+            dataIndex = i;
+            break;
+        }
+    }
+    // if there is a data segment at all
+    if(dataIndex != *numberOfLines){
+        // check if there's a variable in the same line of .data declaration
+        data_ptr += 5;
+        if(data_ptr < codeLines[dataIndex] + strlen(codeLines[dataIndex])){
+            // if the first variable doesn't start in the same line as the .data declaration, it starts in the next
+            if(checkEmptyString(data_ptr)){
+                removeElement(codeLines, *numberOfLines, 0);
+                *numberOfLines = *numberOfLines - 1;
+            }
+            else{
+                // if it is, remove the data segment declaration from the line
+                codeLines[dataIndex] = data_ptr;
+            }
+        }
+
+        // start storing the variables
+        unsigned varIdx = 0;
+        for(int i = dataIndex; i < *numberOfLines; i++){
+            if(strstr(codeLines[i], ".text") != NULL){
+                break;
+            }
+            char beforeLabel[BUF_SIZE_LINE];
+            char *afterLabel;
+            strcpy(beforeLabel, codeLines[i]);
+            strtok_r(beforeLabel, ":", &afterLabel);
+            if(checkEmptyString(afterLabel)){
+                perror("Error: variable not declared.");
+                exit(EXIT_FAILURE);
+            }
+            char type[10];
+            char value[100];
+            sscanf(afterLabel, "%9s %99s", type, value);
+            if(!strcmp(type, ".word")){
+                strcpy(varLabels[varIdx].name, beforeLabel);
+                varLabels[varIdx].addr = 0x10010000;
+                varLabels[varIdx]._word = strToInt16t(value);
+                varIdx++;
+            }
+        }
+    }
+}
+
 void storeLabels(char **codeLines, unsigned *numberOfLines){
     // check for labels
     unsigned labelIdx = 0;
@@ -123,11 +177,14 @@ void storeLabels(char **codeLines, unsigned *numberOfLines){
         if(ptr != NULL){
             char beforeLabel[BUF_SIZE_LINE];
             char *afterLabel;
+            
             strcpy(beforeLabel, codeLines[i]);
             strtok_r(beforeLabel, ":", &afterLabel);
+            trimLeadingWhitespaces(afterLabel);
+
             // if it's not in the same line, left shift all elements and decrease array size
             if(checkEmptyString(afterLabel)){
-                removeElement(&codeLines, *numberOfLines, i);
+                removeElement(codeLines, *numberOfLines, i);
                 
                 labels[labelIdx].index = i;
                 *numberOfLines = *numberOfLines - 1;
@@ -140,8 +197,6 @@ void storeLabels(char **codeLines, unsigned *numberOfLines){
             }
             // saves label mnemonic
             strcpy(labels[labelIdx].mnemonic, beforeLabel);
-
-            //printf("\nLabel: %s\nIndex: %d\n", labels[labelIdx].mnemonic, labels[labelIdx].index);
 
             labelIdx++;
         }
@@ -373,13 +428,48 @@ void instructionParsing(char *msg, unsigned index, Instruction *cur_inst, bool i
 }
 
 void parser(char **msg, Instruction *instructions, unsigned *numberOfLines){
+    char **codeSegment = NULL;
+    for(unsigned i = 0; i < *numberOfLines; i++){
+        char *ptr = ptr = strstr(msg[i], ".text");
+        if(ptr != NULL && codeSegment == NULL){
+            char *endOfLine = msg[i] + strlen(msg[i]);
+            if(ptr + 5 < endOfLine){
+                // if the first instruction doesn't start in the same line as the .text declaration, it starts in the next
+                if(!checkEmptyString(ptr)){
+                    // if it is, remove the data segment declaration from the line
+                    strcpy(msg[i], ptr);
+                    codeSegment = &msg[i];
+                }
+                else{
+                    ;
+                }
+            }
+            else{
+                removeElement(msg, *numberOfLines, i);
+                *numberOfLines = *numberOfLines - 1;
+                codeSegment = &msg[i];
+                i--;
+            }
+        }
+    }
+
+    if(codeSegment == NULL){
+        codeSegment = &msg[0];
+    }
+
     // store every label in the labels array
     storeLabels(msg, numberOfLines);
-
+    
+    // store parsed instructions in the array
     bool isSecondInstruction = false;
     int offset = 0;
-    // store parsed instructions in the array
-    for(unsigned i = 0; i < *numberOfLines; i++){
-        instructionParsing(msg[i], i + 1, &instructions[i], isSecondInstruction);
+
+    char **eof = msg + *numberOfLines;
+    char **linePtr = codeSegment;
+    while(linePtr < eof){
+        int index = linePtr - msg;
+        instructionParsing(*linePtr, index + 1, &instructions[index], isSecondInstruction);
+
+        linePtr++;
     }
 }
