@@ -2,6 +2,7 @@
 
 // array of labels
 static Label labels[MAX_LABELS];
+static Label varLabels[MAX_LABELS];
 
 // lookup table for opcodes
 static const Instruction opcodes[] =
@@ -66,8 +67,9 @@ static const unsigned opcodeCount = sizeof(opcodes)/sizeof(opcodes[0]);
 
 static const PseudoInstruction pseudoOps[] =
 {
-    {"move", 2, false},
-    {"li", 2, false}
+    {"move", 2},
+    {"li", 2},
+    {"lw", 2}
 };
 
 static const unsigned pseudoOpsCount = sizeof(pseudoOps)/sizeof(pseudoOps[0]);
@@ -291,7 +293,7 @@ void jTypeParsing(char *arguments, Instruction *parsedInst){
     }
 }
 
-void instructionParsing(char *msg, unsigned index, Instruction *cur_inst){
+void instructionParsing(char *msg, unsigned index, Instruction *cur_inst, bool isSecondInstruction){
     // opcode mnemonic for opcode identification
     char opmne[10];
     // instruction arguments
@@ -329,6 +331,14 @@ void instructionParsing(char *msg, unsigned index, Instruction *cur_inst){
                     strcpy(opmne, "ori");
                     strcpy(arguments, pseudoArguments);
                     break;
+                //case LW:
+                //    if(strchr(arguments, '(') != NULL){
+                //        if(!isSecondInstruction){
+                //            strcpy(opmne, "lui");
+                //            strcpy(arguments, "$at,");
+                //        }
+                //    }
+                    break;
 
                 default:
                     break;
@@ -362,9 +372,14 @@ void instructionParsing(char *msg, unsigned index, Instruction *cur_inst){
     }
 }
 
-void parser(char **msg, Instruction *instructions, unsigned numberOfLines){
+void parser(char **msg, Instruction *instructions, unsigned *numberOfLines){
+    // store every label in the labels array
+    storeLabels(msg, numberOfLines);
+
+    bool isSecondInstruction = false;
+    int offset = 0;
     // store parsed instructions in the array
-    for(unsigned i = 0; i < numberOfLines; i++){
-        instructionParsing(msg[i], i + 1, &instructions[i]);
+    for(unsigned i = 0; i < *numberOfLines; i++){
+        instructionParsing(msg[i], i + 1, &instructions[i], isSecondInstruction);
     }
 }

@@ -34,9 +34,6 @@ void assemble(char *fileName, char *outputDir){
         msg = readFile(&numberOfLines, fileName);
     }
 
-    // store every label in the labels array
-    storeLabels(msg, &numberOfLines);
-
     // memory allocation for binary instructions
     unsigned *binaryInstructions = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
 
@@ -44,7 +41,7 @@ void assemble(char *fileName, char *outputDir){
     Instruction *instructions = (Instruction *)malloc(sizeof(Instruction) * numberOfLines);
 
     // start the parsing routine, from an array of text instructions separated by \n to a Instruction struct array
-    parser(msg, instructions, numberOfLines);
+    parser(msg, instructions, &numberOfLines);
 
     // free assembly code lines array
     for(unsigned i = 0; i < numberOfLines; i++){

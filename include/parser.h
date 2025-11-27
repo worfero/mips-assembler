@@ -14,6 +14,7 @@
 
 #define MOVE                    0           // MOVE pseudo-instruction index
 #define LI                      1           // LI pseudo-instruction index
+#define LW                      2           // LW pseudo-instruction index
 
 #define R_TYPE                  1           // R-TYPE instruction
 #define I_TYPE                  2           // I-TYPE instruction
@@ -48,7 +49,6 @@ typedef struct {
 typedef struct {
     char mnemonic[20];
     byte argCount;
-    bool isTwoInstructions;
 } PseudoInstruction;
 
 // defining register structure
@@ -70,8 +70,8 @@ void iTypeParsing(char *msg, Instruction *parsedInst, unsigned index);
 
 void jTypeParsing(char *msg, Instruction *parsedInst);
 
-void instructionParsing(char *msg, unsigned index, Instruction *cur_inst);
+void instructionParsing(char *msg, unsigned index, Instruction *cur_inst, bool isSecondInstruction);
 
-void parser(char **msg, Instruction *instructions, unsigned numberOfLines);
+void parser(char **msg, Instruction *instructions, unsigned *numberOfLines);
 
 #endif
