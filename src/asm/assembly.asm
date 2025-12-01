@@ -1,3 +1,5 @@
+.data
+teste: .word 10
 
 .text
 main: addi $2, $0, 5 # 20020005

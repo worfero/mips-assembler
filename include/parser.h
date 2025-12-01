@@ -38,10 +38,10 @@ typedef struct {
     unsigned addr;
     char name[50];
     union Value{
-        int16_t _word;
-        int32_t _dword;
-        float _float;
-        bool _bool;
+        int16_t wordVal;
+        int32_t dwordVal;
+        float floatVal;
+        bool boolVal;
     };
 } VarLabel;
 
@@ -69,6 +69,10 @@ typedef struct {
     char alt_mne[6]; // alternate mnemonic
     byte numCode; // opcode number
 } Register;
+
+char **findSegment(char *type, char **lines, unsigned *numberOfLines);
+
+void parseData(char **codeLines, char **dataPtr, unsigned *numberOfLines);
 
 void storeLabels(char **codeLines, unsigned *numberOfLines);
 
