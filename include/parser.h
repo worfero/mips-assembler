@@ -34,15 +34,17 @@ typedef struct {
     char mnemonic[10];
 } Label;
 
+union Value{
+    int16_t wordVal;
+    int32_t dwordVal;
+    float floatVal;
+    bool boolVal;
+};
+
 typedef struct {
     unsigned addr;
     char name[50];
-    union Value{
-        int16_t wordVal;
-        int32_t dwordVal;
-        float floatVal;
-        bool boolVal;
-    };
+    union Value value;
 } VarLabel;
 
 typedef struct {

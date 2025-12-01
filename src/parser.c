@@ -176,7 +176,7 @@ void parseData(char **codeLines, char **dataPtr, unsigned *numberOfLines){
 
         strcpy(varLabels[varIndex].name, beforeLabel);
         varLabels[varIndex].addr = 0x10010000 + varIndex;
-        varLabels[varIndex].wordVal = 10;
+        varLabels[varIndex].value.wordVal = 10;
         varIndex++;
     }
 }
@@ -460,7 +460,9 @@ void parser(char **msg, Instruction *instructions, unsigned *numberOfLines){
     bool isSecondInstruction = false;
     int codeOffset = codeSegment - msg;
 
-    for(int i = codeOffset; i < *numberOfLines; i++){
-        instructionParsing(msg[i], i + 1, &instructions[i - codeOffset], isSecondInstruction);
+    *numberOfLines = *numberOfLines - codeOffset;
+
+    for(int i = 0; i < *numberOfLines; i++){
+        instructionParsing(msg[i + codeOffset], i + 1, &instructions[i], isSecondInstruction);
     }
 }

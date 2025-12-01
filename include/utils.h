@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <stdio.h>
 
 int16_t strToInt16t(const char *str);
 

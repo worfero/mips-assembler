@@ -1,11 +1,11 @@
-#include "utils.h"
+#include "../include/utils.h"
 
 int16_t strToInt16t(const char *str){
     char *endptr;
     long val = strtol(str, &endptr, 10);
 
     if (endptr == str){
-        perror("Error: variable is not a number");
+        printf("Error: variable is not a number");
         exit(EXIT_FAILURE);
     }
 
