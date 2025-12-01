@@ -1,5 +1,7 @@
 .data
-teste: .dword 10
+teste: .word 10
+teste2: .dword 20
+teste3: .float 12.5
 
 .text
 main: addi $2, $0, 5 # 20020005

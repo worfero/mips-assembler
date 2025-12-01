@@ -158,11 +158,13 @@ void parseData(char **codeLines, char **dataPtr, unsigned *numberOfLines){
         char *colon;
         colon = strchr(line, ':');
         if(colon == NULL){
-            printf("Error: missing colon on data declaration");
+            printf("Error: missing colon on data declaration\n");
             exit(EXIT_FAILURE);
         }
 
         char beforeLabel[BUF_SIZE_LINE];
+        char type[BUF_SIZE_LINE];
+        char val[BUF_SIZE_LINE];
         char *afterLabel;
 
         strcpy(beforeLabel, line);
@@ -170,13 +172,30 @@ void parseData(char **codeLines, char **dataPtr, unsigned *numberOfLines){
         trimLeadingWhitespaces(afterLabel);
 
         if(checkEmptyString(afterLabel)){
-            printf("Error: missing data declaration");
+            printf("Error: missing data declaration\n");
             exit(EXIT_FAILURE);
         }
 
         strcpy(varLabels[varIndex].name, beforeLabel);
+
+        sscanf(afterLabel, "%99s %999s", type, val);
+
         varLabels[varIndex].addr = 0x10010000 + varIndex;
-        varLabels[varIndex].value.wordVal = 10;
+        if(!strcmp(".word", type)){
+            char *end;
+            varLabels[varIndex].value.wordVal = (int16_t)strtol(val, &end, 10);
+        }
+        else if(!strcmp(".dword", type)){
+            char *end;
+            varLabels[varIndex].value.dwordVal = (int32_t)strtol(val, &end, 10);
+        }
+        else if(!strcmp(".float", type)){
+            char *end;
+            varLabels[varIndex].value.floatVal = strtof(val, &end);
+        }
+        else{
+            printf("Error: '%s' is not a data type\n", type);
+        }
         varIndex++;
     }
 }
@@ -184,7 +203,7 @@ void parseData(char **codeLines, char **dataPtr, unsigned *numberOfLines){
 void storeLabels(char **codeLines, unsigned *numberOfLines){
     // check for labels
     unsigned labelIdx = 0;
-    for(unsigned i = 3; i < *numberOfLines; i++){
+    for(unsigned i = 0; i < *numberOfLines; i++){
         // checks if instruction has a label
         char *ptr;
         ptr = strchr(codeLines[i], ':');
@@ -453,14 +472,14 @@ void parser(char **msg, Instruction *instructions, unsigned *numberOfLines){
         exit(EXIT_FAILURE);
     }
 
+    int codeOffset = codeSegment - msg;
+    *numberOfLines = *numberOfLines - codeOffset;
+
     // store every label in the labels array
-    storeLabels(msg, numberOfLines);
+    storeLabels(codeSegment, numberOfLines);
 
     // store parsed instructions in the array
     bool isSecondInstruction = false;
-    int codeOffset = codeSegment - msg;
-
-    *numberOfLines = *numberOfLines - codeOffset;
 
     for(int i = 0; i < *numberOfLines; i++){
         instructionParsing(msg[i + codeOffset], i + 1, &instructions[i], isSecondInstruction);
