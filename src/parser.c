@@ -495,14 +495,15 @@ void jTypeParsing(char *arguments, Instruction *parsedInst){
     }
 }
 
-void instructionParsing(char *msg, Instruction *cur_inst, bool *isSecondInstruction){
+void preProcess(char *line, char *cleanLine, bool *isSecondInstruction){
     // opcode mnemonic for opcode identification
-    char opmne[10];
+    char opmne[10] = "";
     // instruction arguments
     char bare_arguments[100] = "";
+    // instruction arguments
     char arguments[100] = "";
     // gets current instruction's opcode mnemonic and separate it from the rest of the instruction
-    sscanf(msg, "%9s %99c", opmne, bare_arguments);
+    sscanf(line, "%9s %99c", opmne, bare_arguments);
 
     // remove any whitespaces in the argument string
     removeSpaces(arguments, bare_arguments);
@@ -574,11 +575,27 @@ void instructionParsing(char *msg, Instruction *cur_inst, bool *isSecondInstruct
         }
     }
 
+    char cleanLineBuf[BUF_SIZE_LINE] = "";
+    strcat(cleanLineBuf, opmne);
+    strcat(cleanLineBuf, " ");
+    strcat(cleanLineBuf, arguments);
+
+    strcpy(cleanLine, cleanLineBuf);
+}
+
+void instructionParsing(char *line, Instruction *cur_inst){
+    // opcode mnemonic for opcode identification
+    char opmne[10] = "";
+    // instruction arguments
+    char arguments[100] = "";
+    // gets current instruction's opcode mnemonic and separate it from the rest of the instruction
+    sscanf(line, "%9s %99c", opmne, arguments);
+
     // gets default parameters for the opcode using the lookup table
     getDefaultParams(opmne, cur_inst);
 
     if(cur_inst->type == INVALID_INSTRUCTION){
-        printf("Compilation error at: '%s'\n", msg);
+        printf("Compilation error at: '%s'\n", line);
         exit(EXIT_FAILURE);
     }
 
@@ -595,7 +612,7 @@ void instructionParsing(char *msg, Instruction *cur_inst, bool *isSecondInstruct
     }
 
     if(cur_inst->rd == INVALID_REGISTER || cur_inst->rs == INVALID_REGISTER || cur_inst->rt == INVALID_REGISTER){
-        printf("Compilation error at: '%s'\n", msg);
+        printf("Compilation error at: '%s'\n", line);
         exit(EXIT_FAILURE);
     }
 }
@@ -627,10 +644,12 @@ void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsi
     // allocate memory for the instructions considering 
     *instructions = (Instruction *)malloc(sizeof(Instruction) * (codeSegment.lineCount));
     Instruction *cur_inst = *instructions;
+    char cleanLine[BUF_SIZE_LINE];
 
-    for(int i = 0; linePtr < codeSegment.end; linePtr++, i++){
+    for(int i = 0; linePtr < codeSegment.end; linePtr++, cur_inst++, i++){
+        preProcess(*linePtr, cleanLine, &isSecondInstruction);
         cur_inst->index = i + 1;
-        instructionParsing(*linePtr, cur_inst, &isSecondInstruction);
+        instructionParsing(cleanLine, cur_inst);
         if(isSecondInstruction){
             codeSegment.lineCount++;
             i++;
@@ -643,9 +662,10 @@ void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsi
 
             cur_inst = *instructions + i;
             cur_inst->index = i + 1;
-            instructionParsing(*linePtr, cur_inst, &isSecondInstruction);
+            instructionParsing(cleanLine, cur_inst);
+
+            isSecondInstruction = false;
         }
-        cur_inst++;
     }
 
     *instCount = codeSegment.lineCount;

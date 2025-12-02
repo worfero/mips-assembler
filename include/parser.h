@@ -110,7 +110,9 @@ void iTypeParsing(char *msg, Instruction *parsedInst);
 
 void jTypeParsing(char *msg, Instruction *parsedInst);
 
-void instructionParsing(char *msg, Instruction *cur_inst, bool *isSecondInstruction);
+void preProcess(char *line, char *cleanLine, bool *isSecondInstruction);
+
+void instructionParsing(char *line, Instruction *cur_inst);
 
 void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsigned *codeSize);
 
