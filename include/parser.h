@@ -27,7 +27,17 @@
 
 #define BUF_SIZE_LINE           100         // Maximum buffer for a line
 
+#define MIPS_DATA_ADDR          0x10010000  // Memory address for data storage
+
 typedef unsigned char byte;
+
+typedef struct {
+    char **start;
+    char **end;
+    unsigned lineCount;
+} Segment;
+
+Segment findSegment(char *type, char **lines, unsigned numberOfLines);
 
 typedef struct {
     unsigned index;
@@ -35,8 +45,10 @@ typedef struct {
 } Label;
 
 union Value{
-    int16_t wordVal;
-    int32_t dwordVal;
+    int8_t byteVal;
+    int16_t halfVal;
+    int32_t wordVal;
+    int64_t dwordVal;
     float floatVal;
     bool boolVal;
 };
@@ -44,6 +56,13 @@ union Value{
 typedef struct {
     unsigned addr;
     char name[50];
+    enum {
+        BYTE,
+        HALF,
+        WORD,
+        DWORD,
+        FLOAT,
+    } type;
     union Value value;
 } VarLabel;
 
@@ -58,7 +77,10 @@ typedef struct {
     short imm;
     byte sa;
     byte funct;
+    unsigned index;
 } Instruction;
+
+void printInstructions(Instruction *instructions, int count);
 
 typedef struct {
     char mnemonic[20];
@@ -72,11 +94,11 @@ typedef struct {
     byte numCode; // opcode number
 } Register;
 
-char **findSegment(char *type, char **lines, unsigned *numberOfLines);
+char **findStart(char *type, char **lines, unsigned numberOfLines);
 
-void parseData(char **codeLines, char **dataPtr, unsigned *numberOfLines);
+void parseData(Segment dataSegment);
 
-void storeLabels(char **codeLines, unsigned *numberOfLines);
+void storeLabels(Segment *codeSegments);
 
 byte getRegister(char *regMne);
 
@@ -84,12 +106,12 @@ void getDefaultParams(char *opmne, Instruction *inst);
 
 void rTypeParsing(char *msg, Instruction *parsedInst);
 
-void iTypeParsing(char *msg, Instruction *parsedInst, unsigned index);
+void iTypeParsing(char *msg, Instruction *parsedInst);
 
 void jTypeParsing(char *msg, Instruction *parsedInst);
 
-void instructionParsing(char *msg, unsigned index, Instruction *cur_inst, bool isSecondInstruction);
+void instructionParsing(char *msg, Instruction *cur_inst, bool *isSecondInstruction);
 
-void parser(char **msg, Instruction *instructions, unsigned *numberOfLines);
+void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsigned *codeSize);
 
 #endif

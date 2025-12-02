@@ -39,9 +39,10 @@ char** storeCode(FILE* file, unsigned *numberOfLines){
             deletedLines++;
         }
         else{
-            // if it's not empty, remove comments and line breaks
+            // if it's not empty, remove comments and line breaks and trim leading whitespaces
             tempLine[strcspn(tempLine, "\n")] = 0;
             tempLine[strcspn(tempLine, "#")] = '\0';
+            trimLeadingWhitespaces(tempLine);
             // store it in the array
             strcpy(codeLines[i - deletedLines], tempLine);
         }

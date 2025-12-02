@@ -27,6 +27,7 @@ unsigned machineCode(Instruction inst){
 void assemble(char *fileName, char *outputDir){
     // number of assembly code lines declared as a variable
     unsigned numberOfLines = 0;
+    unsigned instCount = 0;
 
     // reads the assembly code file and store each line of code in a string array, without comments, whitespaces and line breaks
     char **msg = readFile(&numberOfLines, fileName);
@@ -34,14 +35,11 @@ void assemble(char *fileName, char *outputDir){
         msg = readFile(&numberOfLines, fileName);
     }
 
-    // memory allocation for binary instructions
-    unsigned *binaryInstructions = (unsigned int*)malloc(numberOfLines*sizeof(unsigned));
-
     // instruction structure array for instruction parsing
-    Instruction *instructions = (Instruction *)malloc(sizeof(Instruction) * numberOfLines);
+    Instruction *instructions;
 
     // start the parsing routine, from an array of text instructions separated by \n to a Instruction struct array
-    parser(msg, instructions, &numberOfLines);
+    parser(msg, &instructions, numberOfLines, &instCount);
 
     // free assembly code lines array
     for(unsigned i = 0; i < numberOfLines; i++){
@@ -49,7 +47,10 @@ void assemble(char *fileName, char *outputDir){
     }
     free(msg);
 
-    for(unsigned i = 0; i < numberOfLines; i++){
+    // memory allocation for binary instructions
+    unsigned *binaryInstructions = (unsigned int*)malloc(instCount*sizeof(unsigned));
+
+    for(unsigned i = 0; i < instCount; i++){
         // generate 16-bit machine code instruction
         unsigned binInst = machineCode(instructions[i]);
 

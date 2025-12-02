@@ -3,67 +3,109 @@
 // array of labels
 static Label labels[MAX_LABELS];
 static VarLabel varLabels[MAX_VAR];
+static int varCount;
 
 // lookup table for opcodes
 static const Instruction opcodes[] =
 {
-    {"sll"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 0},
-    {"srl"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 2},
-    {"sra"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 3},
-    {"sllv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 4},
-    {"srlv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 6},
-    {"srav"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 7},
-    {"jr"      , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 8},
-    {"jalr"    , R_TYPE, 0 , 31         , INPUT_FIELD, 0          , N_A        , 0          , 9},
-    {"syscall" , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 12},
-    {"break"   , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 13},
-    {"mfhi"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 16},
-    {"mthi"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 17},
-    {"mflo"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 18},
-    {"mtlo"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 19},
-    {"mult"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 24},
-    {"multu"   , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 25},
-    {"div"     , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 26},
-    {"divu"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 27},
-    {"add"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 32},
-    {"addu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 33},
-    {"sub"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 34},
-    {"subu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 35},
-    {"and"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 36},
-    {"or"      , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 37},
-    {"xor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 38},
-    {"nor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 39},
-    {"slt"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 42},
-    {"sltu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 43},
-    {"bgez"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 1          , INPUT_FIELD, N_A        , N_A},
-    {"bltz"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
-    {"j"       , J_TYPE, 2 , N_A        , N_A        , N_A        , INPUT_FIELD, N_A        , N_A},
-    {"jal"     , J_TYPE, 3 , N_A        , N_A        , N_A        , INPUT_FIELD, N_A        , N_A},
-    {"bne"     , I_TYPE, 5 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"blez"    , I_TYPE, 6 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
-    {"bgtz"    , I_TYPE, 7 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A},
-    {"beq"     , I_TYPE, 4 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"addi"    , I_TYPE, 8 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"addiu"   , I_TYPE, 9 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"slti"    , I_TYPE, 10, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"sltiu"   , I_TYPE, 11, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"andi"    , I_TYPE, 12, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"ori"     , I_TYPE, 13, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"xori"    , I_TYPE, 14, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"lui"     , I_TYPE, 15, N_A        , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"lb"      , I_TYPE, 32, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"lh"      , I_TYPE, 33, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"lw"      , I_TYPE, 35, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"lbu"     , I_TYPE, 36, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"lhu"     , I_TYPE, 37, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"sb"      , I_TYPE, 40, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"sh"      , I_TYPE, 41, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"sw"      , I_TYPE, 43, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"lwcl"    , I_TYPE, 49, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A},
-    {"swcl"    , I_TYPE, 56, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A}
+    {"sll"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 0  , N_A},
+    {"srl"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 2  , N_A},
+    {"sra"     , R_TYPE, 0 , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , INPUT_FIELD, 3  , N_A},
+    {"sllv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 4  , N_A},
+    {"srlv"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 6  , N_A},
+    {"srav"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 7  , N_A},
+    {"jr"      , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 8  , N_A},
+    {"jalr"    , R_TYPE, 0 , 31         , INPUT_FIELD, 0          , N_A        , 0          , 9  , N_A},
+    {"syscall" , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 12 , N_A},
+    {"break"   , R_TYPE, 0 , 0          , 0          , 0          , N_A        , 0          , 13 , N_A},
+    {"mfhi"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 16 , N_A},
+    {"mthi"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 17 , N_A},
+    {"mflo"    , R_TYPE, 0 , INPUT_FIELD, 0          , 0          , N_A        , 0          , 18 , N_A},
+    {"mtlo"    , R_TYPE, 0 , 0          , INPUT_FIELD, 0          , N_A        , 0          , 19 , N_A},
+    {"mult"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 24 , N_A},
+    {"multu"   , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 25 , N_A},
+    {"div"     , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 26 , N_A},
+    {"divu"    , R_TYPE, 0 , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 27 , N_A},
+    {"add"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 32 , N_A},
+    {"addu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 33 , N_A},
+    {"sub"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 34 , N_A},
+    {"subu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 35 , N_A},
+    {"and"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 36 , N_A},
+    {"or"      , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 37 , N_A},
+    {"xor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 38 , N_A},
+    {"nor"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 39 , N_A},
+    {"slt"     , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 42 , N_A},
+    {"sltu"    , R_TYPE, 0 , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , 0          , 43 , N_A},
+    {"bgez"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 1          , INPUT_FIELD, N_A        , N_A, N_A},
+    {"bltz"    , I_TYPE, 1 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A, N_A},
+    {"j"       , J_TYPE, 2 , N_A        , N_A        , N_A        , INPUT_FIELD, N_A        , N_A, N_A},
+    {"jal"     , J_TYPE, 3 , N_A        , N_A        , N_A        , INPUT_FIELD, N_A        , N_A, N_A},
+    {"bne"     , I_TYPE, 5 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"blez"    , I_TYPE, 6 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A, N_A},
+    {"bgtz"    , I_TYPE, 7 , N_A        , INPUT_FIELD, 0          , INPUT_FIELD, N_A        , N_A, N_A},
+    {"beq"     , I_TYPE, 4 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"addi"    , I_TYPE, 8 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"addiu"   , I_TYPE, 9 , N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"slti"    , I_TYPE, 10, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"sltiu"   , I_TYPE, 11, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"andi"    , I_TYPE, 12, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"ori"     , I_TYPE, 13, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"xori"    , I_TYPE, 14, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"lui"     , I_TYPE, 15, N_A        , 0          , INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"lb"      , I_TYPE, 32, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"lh"      , I_TYPE, 33, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"lw"      , I_TYPE, 35, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"lbu"     , I_TYPE, 36, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"lhu"     , I_TYPE, 37, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"sb"      , I_TYPE, 40, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"sh"      , I_TYPE, 41, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"sw"      , I_TYPE, 43, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"lwcl"    , I_TYPE, 49, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A},
+    {"swcl"    , I_TYPE, 56, N_A        , INPUT_FIELD, INPUT_FIELD, INPUT_FIELD, N_A        , N_A, N_A}
 };
 
 static const unsigned opcodeCount = sizeof(opcodes)/sizeof(opcodes[0]);
+
+void printInstructions(Instruction *instructions, int count){
+    for(int i = 0; i < count; i++){
+        printf("Instruction\n----------------\n");
+        printf("index: %d\n", instructions[i].index);
+        printf("mnemonic: %s\n", instructions[i].mnemonic);
+        switch(instructions[i].type){
+            case R_TYPE:
+                printf("type: %s\n", "R-TYPE");
+                break;
+            case I_TYPE:
+                printf("type: %s\n", "I-TYPE");
+                break;
+            case J_TYPE:
+                printf("type: %s\n", "J-TYPE");
+                break;
+            default:
+                printf("type: Invalid");
+                break;
+        }
+        printf("opcode: %d\n", instructions[i].op);
+        if(instructions[i].rd != N_A){
+            printf("rd: %d\n", instructions[i].rd);
+        }
+        if(instructions[i].rs != N_A){
+            printf("rs: %d\n", instructions[i].rs);
+        }
+        if(instructions[i].rt != N_A){
+            printf("rt: %d\n", instructions[i].rt);
+        }
+        if(instructions[i].imm != N_A){
+            printf("immediate: %d\n", instructions[i].imm);
+        }
+        if(instructions[i].sa != N_A){
+            printf("sa: %d\n", instructions[i].sa);
+        }
+        if(instructions[i].funct != N_A){
+            printf("func: %d\n", instructions[i].funct);
+        }
+    }
+}
 
 static const PseudoInstruction pseudoOps[] =
 {
@@ -113,9 +155,41 @@ static const Register registers[] =
 
 static const unsigned registerCount = sizeof(registers)/sizeof(registers[0]);
 
-char **findSegment(char *type, char **lines, unsigned *numberOfLines){
+Segment findSegment(char *type, char **lines, unsigned numberOfLines){
+    Segment segment;
+    char **linePtr;
+    char **eof;
+
+    eof = lines + numberOfLines;
+    
+    segment.start = findStart(type, lines, numberOfLines);
+    if(segment.start == NULL){
+        segment.end = NULL;
+        segment.lineCount = 0;
+        return segment;
+    }
+    linePtr = segment.start;
+
+    while(linePtr < eof){
+        char *line = *linePtr;
+        if(line[0] == '.'){
+            segment.end = linePtr;
+            break;
+        }
+        linePtr++;
+    }
+    if(linePtr == eof){
+        segment.end = eof;
+    }
+
+    segment.lineCount = segment.end - segment.start;
+
+    return segment;
+}
+
+char **findStart(char *type, char **lines, unsigned numberOfLines){
     char **segment = NULL;
-    for(unsigned i = 0; i < *numberOfLines; i++){
+    for(unsigned i = 0; i < numberOfLines; i++){
         char *ptr = strstr(lines[i], type);
         if(ptr != NULL){
             char *endOfLine = lines[i] + strlen(lines[i]);
@@ -144,12 +218,13 @@ char **findSegment(char *type, char **lines, unsigned *numberOfLines){
     return segment;
 }
 
-void parseData(char **codeLines, char **dataPtr, unsigned *numberOfLines){
-    char **eof = codeLines + *numberOfLines;
+void parseData(Segment dataSegment){
     char *line;
+    char **linePtr = dataSegment.start;
     int varIndex = 0;
-    for(; dataPtr < eof; dataPtr++){
-        line = *dataPtr;
+    int memOffset = 0;
+    for(; linePtr < dataSegment.end; linePtr++){
+        line = *linePtr;
         trimLeadingWhitespaces(line);
         if(line[0] == '.'){
             break;
@@ -180,53 +255,91 @@ void parseData(char **codeLines, char **dataPtr, unsigned *numberOfLines){
 
         sscanf(afterLabel, "%99s %999s", type, val);
 
-        varLabels[varIndex].addr = 0x10010000 + varIndex;
         if(!strcmp(".word", type)){
+            varLabels[varIndex].type = WORD;
+
             char *end;
-            varLabels[varIndex].value.wordVal = (int16_t)strtol(val, &end, 10);
+            varLabels[varIndex].value.wordVal = (int32_t)strtol(val, &end, 10);
+            varLabels[varIndex].addr = MIPS_DATA_ADDR + memOffset;
+            memOffset += 4;
         }
         else if(!strcmp(".dword", type)){
+            varLabels[varIndex].type = DWORD;
+
             char *end;
-            varLabels[varIndex].value.dwordVal = (int32_t)strtol(val, &end, 10);
+            varLabels[varIndex].value.dwordVal = (int64_t)strtol(val, &end, 10);
+            varLabels[varIndex].addr = MIPS_DATA_ADDR + memOffset;
+            memOffset += 8;
         }
         else if(!strcmp(".float", type)){
+            varLabels[varIndex].type = FLOAT;
+
             char *end;
             varLabels[varIndex].value.floatVal = strtof(val, &end);
+            varLabels[varIndex].addr = MIPS_DATA_ADDR + memOffset;
+            memOffset += 4;
+        }
+        else if(!strcmp(".half", type)){
+            varLabels[varIndex].type = HALF;
+
+            char *end;
+            varLabels[varIndex].value.halfVal = (int16_t)strtol(val, &end, 10);
+            varLabels[varIndex].addr = MIPS_DATA_ADDR + memOffset;
+            memOffset += 2;
+        }
+        else if(!strcmp(".byte", type)){
+            varLabels[varIndex].type = BYTE;
+
+            char *end;
+            varLabels[varIndex].value.halfVal = (int8_t)strtol(val, &end, 10);
+            varLabels[varIndex].addr = MIPS_DATA_ADDR + memOffset;
+            memOffset += 1;
         }
         else{
             printf("Error: '%s' is not a data type\n", type);
         }
         varIndex++;
     }
+
+    varCount = varIndex;
 }
 
-void storeLabels(char **codeLines, unsigned *numberOfLines){
+void storeLabels(Segment *codeSegment){
     // check for labels
+    char **linePtr = codeSegment->start;
     unsigned labelIdx = 0;
-    for(unsigned i = 0; i < *numberOfLines; i++){
+    for(; linePtr < codeSegment->end; linePtr++){
         // checks if instruction has a label
         char *ptr;
-        ptr = strchr(codeLines[i], ':');
+        ptr = strchr(*linePtr, ':');
         if(ptr != NULL){
             char beforeLabel[BUF_SIZE_LINE];
             char *afterLabel;
             
-            strcpy(beforeLabel, codeLines[i]);
+            strcpy(beforeLabel, *linePtr);
             strtok_r(beforeLabel, ":", &afterLabel);
             trimLeadingWhitespaces(afterLabel);
 
             // if it's not in the same line, left shift all elements and decrease array size
             if(checkEmptyString(afterLabel)){
-                removeElement(codeLines, *numberOfLines, i);
+                //removeElement(codeLines, *numberOfLines, i);
                 
-                labels[labelIdx].index = i;
-                *numberOfLines = *numberOfLines - 1;
-                i--;
+                //labels[labelIdx].index = i;
+                //*numberOfLines = *numberOfLines - 1;
+                //i--;
             }
-            // if it is, cut it away from the instruction line
+            // if it is, change the pointer to after the label (i.e the instruction)
             else{
-                strcpy(codeLines[i], afterLabel);
-                labels[labelIdx].index = i;
+                ptr++;
+                while(isspace(*ptr)){
+                    ptr++;
+                }
+                char *newPtr = strdup(ptr);  // allocates new memory
+                free(*linePtr);
+                *linePtr = newPtr;
+
+                unsigned index = linePtr - codeSegment->start;
+                labels[labelIdx].index = index;
             }
             // saves label mnemonic
             strcpy(labels[labelIdx].mnemonic, beforeLabel);
@@ -253,6 +366,7 @@ void getDefaultParams(char *opmne, Instruction *inst){
     for(unsigned i = 0; i < opcodeCount; i++){
         if(!strcmp(opmne, opcodes[i].mnemonic)){
             // fills the instruction with opcode default parameters
+            strcpy(inst->mnemonic, opcodes[i].mnemonic);
             inst->op = opcodes[i].op;
             inst->type = opcodes[i].type;
             inst->rd = opcodes[i].rd;
@@ -323,7 +437,7 @@ void rTypeParsing(char *arguments, Instruction *parsedInst){
     }
 }
 
-void iTypeParsing(char *arguments, Instruction *parsedInst, unsigned index){
+void iTypeParsing(char *arguments, Instruction *parsedInst){
     char field2[50];
     char field3[50];
 
@@ -344,7 +458,7 @@ void iTypeParsing(char *arguments, Instruction *parsedInst, unsigned index){
         }
         for(unsigned i = 0; i < MAX_LABELS; i++){
             if(!strcmp(labels[i].mnemonic, label)){
-                parsedInst->imm = (short)(labels[i].index - index);
+                parsedInst->imm = (short)(labels[i].index - parsedInst->index);
             }
         }
     }
@@ -381,7 +495,7 @@ void jTypeParsing(char *arguments, Instruction *parsedInst){
     }
 }
 
-void instructionParsing(char *msg, unsigned index, Instruction *cur_inst, bool isSecondInstruction){
+void instructionParsing(char *msg, Instruction *cur_inst, bool *isSecondInstruction){
     // opcode mnemonic for opcode identification
     char opmne[10];
     // instruction arguments
@@ -419,13 +533,39 @@ void instructionParsing(char *msg, unsigned index, Instruction *cur_inst, bool i
                     strcpy(opmne, "ori");
                     strcpy(arguments, pseudoArguments);
                     break;
-                //case LW:
-                //    if(strchr(arguments, '(') != NULL){
-                //        if(!isSecondInstruction){
-                //            strcpy(opmne, "lui");
-                //            strcpy(arguments, "$at,");
-                //        }
-                //    }
+                case LW:
+                    if(strchr(arguments, '(') == NULL){
+                        if(*isSecondInstruction){
+                            sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
+                            strcat(pseudoArguments, arg1);
+                            strcat(pseudoArguments, ",12($at)");
+
+                            strcpy(arguments, pseudoArguments);
+                        }
+                        else{
+                            sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
+                            strcat(pseudoArguments, "$at,");
+                            char varAddr[10];
+                            varAddr[0] = '\0';
+                            for(int i = 0; i < varCount; i++){
+                                if(!strcmp(arg2, varLabels[i].name)){
+                                    snprintf(varAddr, sizeof(varAddr), "%u", varLabels[i].addr);
+                        
+                                    strcat(pseudoArguments, varAddr);
+
+                                    strcpy(opmne, "lui");
+                                    break;
+                                }
+                            }
+                            if(varAddr[0] == '\0'){
+                                printf("Error: variable '%9s' is used but not defined\n", arg2);
+                                exit(EXIT_FAILURE);
+                            }
+                            
+                            strcpy(arguments, pseudoArguments);
+                            *isSecondInstruction = true;
+                        }
+                    }
                     break;
 
                 default:
@@ -447,7 +587,7 @@ void instructionParsing(char *msg, unsigned index, Instruction *cur_inst, bool i
             rTypeParsing(arguments, cur_inst);
             break;
         case I_TYPE:
-            iTypeParsing(arguments, cur_inst, index);
+            iTypeParsing(arguments, cur_inst);
             break;
         case J_TYPE:
             jTypeParsing(arguments, cur_inst);
@@ -460,28 +600,53 @@ void instructionParsing(char *msg, unsigned index, Instruction *cur_inst, bool i
     }
 }
 
-void parser(char **msg, Instruction *instructions, unsigned *numberOfLines){
-    char **dataSegment = findSegment(".data", msg, numberOfLines);
-    if(dataSegment != NULL){
-        parseData(msg, dataSegment, numberOfLines);
+void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsigned *instCount){
+    Segment dataSegment;
+    Segment codeSegment;
+    
+    dataSegment = findSegment(".data", msg, numberOfLines);
+
+    if(dataSegment.start != NULL && dataSegment.end != NULL){
+        parseData(dataSegment);
     }
 
-    char **codeSegment = findSegment(".text", msg, numberOfLines);
-    if(codeSegment == NULL){
-        printf("Error: codeSegment pointer can't be null");
+    codeSegment = findSegment(".text", msg, numberOfLines);
+
+    if(codeSegment.start == NULL || codeSegment.end == NULL){
+        printf("Error: codeSegment pointers can't be null\n");
         exit(EXIT_FAILURE);
     }
 
-    int codeOffset = codeSegment - msg;
-    *numberOfLines = *numberOfLines - codeOffset;
-
     // store every label in the labels array
-    storeLabels(codeSegment, numberOfLines);
+    storeLabels(&codeSegment);
 
     // store parsed instructions in the array
     bool isSecondInstruction = false;
+    char **linePtr = codeSegment.start;
 
-    for(int i = 0; i < *numberOfLines; i++){
-        instructionParsing(msg[i + codeOffset], i + 1, &instructions[i], isSecondInstruction);
+    // allocate memory for the instructions considering 
+    *instructions = (Instruction *)malloc(sizeof(Instruction) * (codeSegment.lineCount));
+    Instruction *cur_inst = *instructions;
+
+    for(int i = 0; linePtr < codeSegment.end; linePtr++, i++){
+        cur_inst->index = i + 1;
+        instructionParsing(*linePtr, cur_inst, &isSecondInstruction);
+        if(isSecondInstruction){
+            codeSegment.lineCount++;
+            i++;
+            
+            Instruction *newInstructions = realloc(*instructions, codeSegment.lineCount * sizeof(Instruction));
+            if(newInstructions != NULL){
+                free(instructions);
+            }
+            *instructions = newInstructions;
+
+            cur_inst = *instructions + i;
+            cur_inst->index = i + 1;
+            instructionParsing(*linePtr, cur_inst, &isSecondInstruction);
+        }
+        cur_inst++;
     }
+
+    *instCount = codeSegment.lineCount;
 }
