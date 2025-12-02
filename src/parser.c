@@ -187,6 +187,14 @@ Segment findSegment(char *type, char **lines, unsigned numberOfLines){
     return segment;
 }
 
+void printSegment(Segment segment){
+    char **linePtr = segment.start;
+    for(; linePtr < segment.end; linePtr++){
+        char *line = *linePtr;
+        printf("%s\n", line);
+    }
+}
+
 char **findStart(char *type, char **lines, unsigned numberOfLines){
     char **segment = NULL;
     for(unsigned i = 0; i < numberOfLines; i++){
@@ -534,12 +542,13 @@ void preProcess(char *line, char *cleanLine, bool *isSecondInstruction){
                     strcpy(opmne, "ori");
                     strcpy(arguments, pseudoArguments);
                     break;
+
                 case LW:
                     if(strchr(arguments, '(') == NULL){
                         if(*isSecondInstruction){
                             sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
                             strcat(pseudoArguments, arg1);
-                            strcat(pseudoArguments, ",12($at)");
+                            strcat(pseudoArguments, ",0($at)");
 
                             strcpy(arguments, pseudoArguments);
                         }
@@ -550,7 +559,8 @@ void preProcess(char *line, char *cleanLine, bool *isSecondInstruction){
                             varAddr[0] = '\0';
                             for(int i = 0; i < varCount; i++){
                                 if(!strcmp(arg2, varLabels[i].name)){
-                                    snprintf(varAddr, sizeof(varAddr), "%u", varLabels[i].addr);
+                                    // get upper 16-bit of the variable address
+                                    snprintf(varAddr, sizeof(varAddr), "%u", (uint16_t)(varLabels[i].addr >> 16));
                         
                                     strcat(pseudoArguments, varAddr);
 
@@ -655,13 +665,11 @@ void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsi
             codeSegment.lineCount++;
             i++;
             
-            Instruction *newInstructions = realloc(*instructions, codeSegment.lineCount * sizeof(Instruction));
-            if(newInstructions != NULL){
-                free(instructions);
-            }
+            Instruction *newInstructions = (Instruction *)realloc(*instructions, codeSegment.lineCount * sizeof(Instruction));
             *instructions = newInstructions;
 
             cur_inst = *instructions + i;
+            preProcess(*linePtr, cleanLine, &isSecondInstruction);
             cur_inst->index = i + 1;
             instructionParsing(cleanLine, cur_inst);
 

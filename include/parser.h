@@ -39,6 +39,8 @@ typedef struct {
 
 Segment findSegment(char *type, char **lines, unsigned numberOfLines);
 
+void printSegment(Segment segment);
+
 typedef struct {
     unsigned index;
     char mnemonic[10];

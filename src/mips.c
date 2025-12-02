@@ -61,6 +61,7 @@ void assemble(char *fileName, char *outputDir){
     }
     // free instructions array
     free(instructions);
+
     // write machine code to file
     writeFile(binaryInstructions, numberOfLines, outputDir);
     // free machine code array
