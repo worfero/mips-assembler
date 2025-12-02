@@ -98,7 +98,7 @@ char **findStart(char *type, char **lines, unsigned numberOfLines);
 
 void parseData(Segment dataSegment);
 
-void storeLabels(Segment *codeSegments);
+void parseLabels(Segment *codeSegments);
 
 byte getRegister(char *regMne);
 

@@ -304,7 +304,7 @@ void parseData(Segment dataSegment){
     varCount = varIndex;
 }
 
-void storeLabels(Segment *codeSegment){
+void parseLabels(Segment *codeSegment){
     // check for labels
     char **linePtr = codeSegment->start;
     unsigned labelIdx = 0;
@@ -320,13 +320,13 @@ void storeLabels(Segment *codeSegment){
             strtok_r(beforeLabel, ":", &afterLabel);
             trimLeadingWhitespaces(afterLabel);
 
-            // if it's not in the same line, left shift all elements and decrease array size
+            // if it's not in the same line, left shift all elements ahead and decrease ending pointer
             if(checkEmptyString(afterLabel)){
-                //removeElement(codeLines, *numberOfLines, i);
-                
-                //labels[labelIdx].index = i;
-                //*numberOfLines = *numberOfLines - 1;
-                //i--;
+                int index = linePtr - codeSegment->start;
+                removeElement(codeSegment->start, codeSegment->lineCount, index);
+                codeSegment->end = codeSegment->end - 1;
+                codeSegment->lineCount = codeSegment->lineCount - 1;
+                linePtr--;
             }
             // if it is, change the pointer to after the label (i.e the instruction)
             else{
@@ -618,6 +618,7 @@ void instructionParsing(char *line, Instruction *cur_inst){
 }
 
 void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsigned *instCount){
+    // find each segment of the code and get their respective pointers
     Segment dataSegment;
     Segment codeSegment;
     
@@ -635,7 +636,7 @@ void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsi
     }
 
     // store every label in the labels array
-    storeLabels(&codeSegment);
+    parseLabels(&codeSegment);
 
     // store parsed instructions in the array
     bool isSecondInstruction = false;

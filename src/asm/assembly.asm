@@ -4,7 +4,8 @@ teste2: .dword 20
 teste3: .float 12.5
 
 .text
-main: addi $2, $0, 5 # 20020005
+main: 
+addi $2, $0, 5 # 20020005
 addi $3, $0, 12 # 2003000c
 addi $7, $3, -9 # 2067fff7
 or $4, $7, $2 # 00e22025
