@@ -16,6 +16,11 @@
 #define MOVE                    0           // MOVE pseudo-instruction index
 #define LI                      1           // LI pseudo-instruction index
 #define LW                      2           // LW pseudo-instruction index
+#define LA                      3           // LA pseudo-instruction index
+#define BLT                     4           // BLT pseudo-instruction index
+#define BLE                     5           // BLE pseudo-instruction index
+#define BGT                     6           // BGT pseudo-instruction index
+#define BGE                     7           // BGE pseudo-instruction index
 
 #define R_TYPE                  1           // R-TYPE instruction
 #define I_TYPE                  2           // I-TYPE instruction
@@ -50,7 +55,6 @@ union Value{
     int8_t byteVal;
     int16_t halfVal;
     int32_t wordVal;
-    int64_t dwordVal;
     float floatVal;
     bool boolVal;
 };
@@ -66,7 +70,7 @@ typedef struct {
         FLOAT,
     } type;
     union Value value;
-} VarLabel;
+} StoredData;
 
 typedef struct {
     // declaring instruction variables
@@ -83,11 +87,6 @@ typedef struct {
 } Instruction;
 
 void printInstructions(Instruction *instructions, int count);
-
-typedef struct {
-    char mnemonic[20];
-    byte argCount;
-} PseudoInstruction;
 
 // defining register structure
 typedef struct {
