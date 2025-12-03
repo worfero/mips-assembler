@@ -24,7 +24,7 @@ unsigned countLines(FILE* file)
 
 char** storeCode(FILE* file, unsigned *numberOfLines){
     // memory allocation for the code lines array, considering current number of lines
-    char** codeLines = stringMalloc(*numberOfLines);
+    char** codeLines = stringArrayMalloc(*numberOfLines);
     unsigned deletedLines = 0;
     for(unsigned i = 0; i < *numberOfLines; i++){
         // temporary string to store line

@@ -1,6 +1,6 @@
 .data
 teste: .word 10
-teste2: .dword 20
+teste2: .word 20
 teste3: .float 12.5
 
 .text

@@ -30,6 +30,7 @@
 #define INVALID_INSTRUCTION     99          // invalid instruction
 #define INVALID_REGISTER        99          // invalid register
 
+#define BUF_SIZE_FILE           65536       // Maximum buffer for a file
 #define BUF_SIZE_LINE           100         // Maximum buffer for a line
 
 #define MIPS_DATA_ADDR          0x10010000  // Memory address for data storage
@@ -111,7 +112,9 @@ void iTypeParsing(char *msg, Instruction *parsedInst);
 
 void jTypeParsing(char *msg, Instruction *parsedInst);
 
-void preProcess(char *line, char *cleanLine, bool *isSecondInstruction);
+void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsigned *index);
+
+char **preProcess(Segment *codeSegment, unsigned *count);
 
 void instructionParsing(char *line, Instruction *cur_inst);
 

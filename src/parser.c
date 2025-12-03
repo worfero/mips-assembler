@@ -523,268 +523,307 @@ void jTypeParsing(char *arguments, Instruction *parsedInst){
     }
 }
 
-void preProcess(char *line, char *cleanLine, bool *isSecondInstruction){
+void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsigned *index){
+    char arg1[10];
+    char arg2[10];
+    char arg3[10];
+    char pseudoArguments[100] = "";
+
+    switch(pseudoOp){
+        case MOVE: {
+            sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
+            strcat(pseudoArguments, arg1);
+            strcat(pseudoArguments, ",$0,");
+            strcat(pseudoArguments, arg2);
+            
+            strcpy(processedCode[*index], "add ");
+            strcat(processedCode[*index], pseudoArguments);
+            break;
+        }
+
+        case LI: {
+            sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
+            strcat(pseudoArguments, arg1);
+            strcat(pseudoArguments, ",$0,");
+            strcat(pseudoArguments, arg2);
+
+            strcpy(processedCode[*index], "ori ");
+            strcat(processedCode[*index], pseudoArguments);
+            break;
+        }
+
+        case LW: {
+            if(strchr(arguments, '(') == NULL){
+                // first instruction
+                sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
+
+                char dataMemAddr[10];
+                sprintf(dataMemAddr, "%u", (int16_t)(MIPS_DATA_ADDR >> 16));
+                
+                strcat(pseudoArguments, "$at,");
+                strcat(pseudoArguments, dataMemAddr);
+
+                strcpy(processedCode[*index], "lui ");
+                strcat(processedCode[*index], pseudoArguments);
+
+                *index = *index + 1;
+                strcpy(pseudoArguments, "");
+
+                // second instruction
+
+                strcat(pseudoArguments, arg1);
+                strcat(pseudoArguments, ",");
+                char varOffset[10];
+                varOffset[0] = '\0';
+                for(int i = 0; i < varCount; i++){
+                    if(!strcmp(arg2, storedData[i].name)){
+                        // get upper 16-bit of the variable address
+                        snprintf(varOffset, sizeof(varOffset), "%u", storedData[i].addr);
+                        if(varOffset[0] == '\0'){
+                            printf("Error: variable '%9s' is used but not defined\n", arg2);
+                            exit(EXIT_FAILURE);
+                        }
+            
+                        strcat(pseudoArguments, varOffset);
+                        strcat(pseudoArguments, "($at)");
+                    }
+                }
+                strcpy(processedCode[*index], "lw ");
+                strcat(processedCode[*index], pseudoArguments);
+            }
+            else{
+                strcpy(processedCode[*index], "lw ");
+                strcat(processedCode[*index], arguments);
+            }
+            break;
+        }
+
+        case LA: {
+            // first instruction
+            sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
+
+            char dataMemAddr[10];
+            sprintf(dataMemAddr, "%u", (int16_t)(MIPS_DATA_ADDR >> 16));
+            
+            strcat(pseudoArguments, "$at,");
+            strcat(pseudoArguments, dataMemAddr);
+
+            strcpy(processedCode[*index], "lui ");
+            strcat(processedCode[*index], pseudoArguments);
+
+            *index = *index + 1;
+            strcpy(pseudoArguments, "");
+
+            // second instruction
+
+            strcat(pseudoArguments, arg1);
+            strcat(pseudoArguments, ",$at,");
+            char varOffset[10];
+            varOffset[0] = '\0';
+            for(int i = 0; i < varCount; i++){
+                if(!strcmp(arg2, storedData[i].name)){
+                    // get upper 16-bit of the variable address
+                    snprintf(varOffset, sizeof(varOffset), "%u", storedData[i].addr);
+                    if(varOffset[0] == '\0'){
+                        printf("Error: variable '%9s' is used but not defined\n", arg2);
+                        exit(EXIT_FAILURE);
+                    }
+        
+                    strcat(pseudoArguments, varOffset);
+                }
+            }
+            strcpy(processedCode[*index], "ori ");
+            strcat(processedCode[*index], pseudoArguments);
+            break;
+        }
+        
+        case BLT: {
+            // first instruction
+            sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
+
+            strcat(pseudoArguments, "$at,");
+            strcat(pseudoArguments, arg1);
+            strcat(pseudoArguments, arg2);
+
+            strcpy(processedCode[*index], "slt ");
+            strcat(processedCode[*index], pseudoArguments);
+
+            *index = *index + 1;
+            strcpy(pseudoArguments, "");
+
+            // second instruction
+
+            strcat(pseudoArguments, "$at,$0,");
+            bool isValid = false;
+            for(int i = 0; i < labelCount; i++){
+                if(!strcmp(arg3, labels[i].mnemonic)){
+                    strcat(pseudoArguments, labels[i].mnemonic);
+                    isValid = true;
+                    break;
+                }
+            }
+            if(!isValid){
+                printf("Error: label '%s' not found.\n", arg3);
+                exit(EXIT_FAILURE);
+            }
+
+            strcpy(processedCode[*index], "bne ");
+            strcat(processedCode[*index], pseudoArguments);
+            break;
+        }
+        
+        case BLE: {
+            // first instruction
+            sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
+
+            strcat(pseudoArguments, "$at,");
+            strcat(pseudoArguments, arg2);
+            strcat(pseudoArguments, arg1);
+
+            strcpy(processedCode[*index], "slt ");
+            strcat(processedCode[*index], pseudoArguments);
+
+            *index = *index + 1;
+            strcpy(pseudoArguments, "");
+
+            // second instruction
+
+            strcat(pseudoArguments, "$at,$0,");
+            bool isValid = false;
+            for(int i = 0; i < labelCount; i++){
+                if(!strcmp(arg3, labels[i].mnemonic)){
+                    strcat(pseudoArguments, labels[i].mnemonic);
+                    isValid = true;
+                    break;
+                }
+            }
+            if(!isValid){
+                printf("Error: label '%s' not found.\n", arg3);
+                exit(EXIT_FAILURE);
+            }
+
+            strcpy(processedCode[*index], "beq ");
+            strcat(processedCode[*index], pseudoArguments);
+            break;
+        }
+
+        case BGT: {
+            // first instruction
+            sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
+
+            strcat(pseudoArguments, "$at,");
+            strcat(pseudoArguments, arg2);
+            strcat(pseudoArguments, arg1);
+
+            strcpy(processedCode[*index], "slt ");
+            strcat(processedCode[*index], pseudoArguments);
+
+            *index = *index + 1;
+            strcpy(pseudoArguments, "");
+
+            // second instruction
+
+            strcat(pseudoArguments, "$at,$0,");
+            bool isValid = false;
+            for(int i = 0; i < labelCount; i++){
+                if(!strcmp(arg3, labels[i].mnemonic)){
+                    strcat(pseudoArguments, labels[i].mnemonic);
+                    isValid = true;
+                    break;
+                }
+            }
+            if(!isValid){
+                printf("Error: label '%s' not found.\n", arg3);
+                exit(EXIT_FAILURE);
+            }
+
+            strcpy(processedCode[*index], "bne ");
+            strcat(processedCode[*index], pseudoArguments);
+            break;
+        }
+        
+        case BGE: {
+            // first instruction
+            sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
+
+            strcat(pseudoArguments, "$at,");
+            strcat(pseudoArguments, arg1);
+            strcat(pseudoArguments, arg2);
+
+            strcpy(processedCode[*index], "slt ");
+            strcat(processedCode[*index], pseudoArguments);
+
+            *index = *index + 1;
+            strcpy(pseudoArguments, "");
+
+            // second instruction
+
+            strcat(pseudoArguments, "$at,$0,");
+            bool isValid = false;
+            for(int i = 0; i < labelCount; i++){
+                if(!strcmp(arg3, labels[i].mnemonic)){
+                    strcat(pseudoArguments, labels[i].mnemonic);
+                    isValid = true;
+                    break;
+                }
+            }
+            if(!isValid){
+                printf("Error: label '%s' not found.\n", arg3);
+                exit(EXIT_FAILURE);
+            }
+
+            strcpy(processedCode[*index], "beq ");
+            strcat(processedCode[*index], pseudoArguments);
+            break;
+        }
+
+        default:
+            
+            break;
+    }
+}
+
+char **preProcess(Segment *codeSegment, unsigned *count){
+    char *line;
+    char **linePtr = codeSegment->start;
+
+    // allocating memory for the .text segment, double the original size so it can contain potential pseudo instructions
+    char **processedCode = stringArrayMalloc(2*(codeSegment->lineCount));
+
     // opcode mnemonic for opcode identification
     char opmne[10] = "";
     // instruction arguments
     char bare_arguments[100] = "";
     // instruction arguments
     char arguments[100] = "";
-    // gets current instruction's opcode mnemonic and separate it from the rest of the instruction
-    sscanf(line, "%9s %99c", opmne, bare_arguments);
 
-    // remove any whitespaces in the argument string
-    removeSpaces(arguments, bare_arguments);
+    *count = 0;
+    for(; linePtr < codeSegment->end; linePtr++){
+        line = *linePtr;
+        int argPos;
+        // gets current instruction's opcode mnemonic and separate it from the rest of the instruction
+        sscanf(line, "%9s %n", opmne, &argPos);
+        strcpy(bare_arguments, line + argPos);
 
-    for(unsigned j = 0; j < pseudoOpsCount; j++){
-        if(!strcmp(opmne, pseudoOps[j])){
-            char arg1[10];
-            char arg2[10];
-            char arg3[10];
-            char pseudoArguments[100] = "";
+        // remove any whitespaces in the argument string
+        removeSpaces(arguments, bare_arguments);
 
-            switch(j){
-                case MOVE:
-                    sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
-                    strcat(pseudoArguments, arg1);
-                    strcat(pseudoArguments, ",$0,");
-                    strcat(pseudoArguments, arg2);
-                    
-                    strcpy(opmne, "add");
-                    strcpy(arguments, pseudoArguments);
-                    break;
-
-                case LI:
-                    sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
-                    strcat(pseudoArguments, arg1);
-                    strcat(pseudoArguments, ",$0,");
-                    strcat(pseudoArguments, arg2);
-
-                    strcpy(opmne, "ori");
-                    strcpy(arguments, pseudoArguments);
-                    break;
-
-                case LW:
-                    if(strchr(arguments, '(') == NULL){
-                        if(*isSecondInstruction){
-                            sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
-                            strcat(pseudoArguments, arg1);
-                            strcat(pseudoArguments, ",");
-                            char varOffset[10];
-                            varOffset[0] = '\0';
-                            for(int i = 0; i < varCount; i++){
-                                if(!strcmp(arg2, storedData[i].name)){
-                                    // get upper 16-bit of the variable address
-                                    snprintf(varOffset, sizeof(varOffset), "%u", storedData[i].addr);
-                                    if(varOffset[0] == '\0'){
-                                        printf("Error: variable '%9s' is used but not defined\n", arg2);
-                                        exit(EXIT_FAILURE);
-                                    }
-                        
-                                    strcat(pseudoArguments, varOffset);
-                                    strcat(pseudoArguments, "($at)");
-                                }
-                            }
-                        }
-                        else{
-                            strcpy(opmne, "lui");
-                            sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
-
-                            char dataMemAddr[10];
-                            sprintf(dataMemAddr, "%u", (int16_t)(MIPS_DATA_ADDR >> 16));
-                            
-                            strcat(pseudoArguments, "$at,");
-                            strcat(pseudoArguments, dataMemAddr);
-
-                            *isSecondInstruction = true;
-                        }
-                        strcpy(arguments, pseudoArguments);
-                    }
-                    break;
-
-                case LA:
-                    if(*isSecondInstruction){
-                        strcpy(opmne, "ori");
-                        sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
-                        strcat(pseudoArguments, arg1);
-                        strcat(pseudoArguments, ",$at,");
-                        char varOffset[10];
-                        varOffset[0] = '\0';
-                        for(int i = 0; i < varCount; i++){
-                            if(!strcmp(arg2, storedData[i].name)){
-                                // get upper 16-bit of the variable address
-                                snprintf(varOffset, sizeof(varOffset), "%u", storedData[i].addr);
-                                if(varOffset[0] == '\0'){
-                                    printf("Error: variable '%9s' is used but not defined\n", arg2);
-                                    exit(EXIT_FAILURE);
-                                }
-                    
-                                strcat(pseudoArguments, varOffset);
-                            }
-                        }
-                    }
-                    else{
-                        strcpy(opmne, "lui");
-                        sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
-
-                        char dataMemAddr[10];
-                        sprintf(dataMemAddr, "%u", (int16_t)(MIPS_DATA_ADDR >> 16));
-                        
-                        strcat(pseudoArguments, "$at,");
-                        strcat(pseudoArguments, dataMemAddr);
-
-                        *isSecondInstruction = true;
-                    }
-
-                    strcpy(arguments, pseudoArguments);
-                    break;
-                
-                
-                case BLT:
-                    if(*isSecondInstruction){
-                        strcpy(opmne, "bne");
-                        sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
-
-                        strcat(pseudoArguments, "$at,$0,");
-                        bool isValid = false;
-                        for(int i = 0; i < labelCount; i++){
-                            if(!strcmp(arg3, labels[i].mnemonic)){
-                                strcat(pseudoArguments, labels[i].mnemonic);
-                                isValid = true;
-                                break;
-                            }
-                        }
-                        if(!isValid){
-                            printf("Error: label '%s' not found.\n", arg3);
-                            exit(EXIT_FAILURE);
-                        }
-                    }
-                    else{
-                        strcpy(opmne, "slt");
-                        sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
-
-                        strcat(pseudoArguments, "$at,");
-                        strcat(pseudoArguments, arg1);
-                        strcat(pseudoArguments, arg2);
-
-                        *isSecondInstruction = true;
-                    }
-
-                    strcpy(arguments, pseudoArguments);
-                    break;
-                
-                case BLE:
-                    if(*isSecondInstruction){
-                        strcpy(opmne, "beq");
-                        sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
-
-                        strcat(pseudoArguments, "$at,$0,");
-                        bool isValid = false;
-                        for(int i = 0; i < labelCount; i++){
-                            if(!strcmp(arg3, labels[i].mnemonic)){
-                                strcat(pseudoArguments, labels[i].mnemonic);
-                                isValid = true;
-                                break;
-                            }
-                        }
-                        if(!isValid){
-                            printf("Error: label '%s' not found.\n", arg3);
-                            exit(EXIT_FAILURE);
-                        }
-                    }
-                    else{
-                        strcpy(opmne, "slt");
-                        sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
-
-                        strcat(pseudoArguments, "$at,");
-                        strcat(pseudoArguments, arg2);
-                        strcat(pseudoArguments, arg1);
-
-                        *isSecondInstruction = true;
-                    }
-
-                    strcpy(arguments, pseudoArguments);
-                    break;
-
-                case BGT:
-                    if(*isSecondInstruction){
-                        strcpy(opmne, "bne");
-                        sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
-
-                        strcat(pseudoArguments, "$at,$0,");
-                        bool isValid = false;
-                        for(int i = 0; i < labelCount; i++){
-                            if(!strcmp(arg3, labels[i].mnemonic)){
-                                strcat(pseudoArguments, labels[i].mnemonic);
-                                isValid = true;
-                                break;
-                            }
-                        }
-                        if(!isValid){
-                            printf("Error: label '%s' not found.\n", arg3);
-                            exit(EXIT_FAILURE);
-                        }
-                    }
-                    else{
-                        strcpy(opmne, "slt");
-                        sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
-
-                        strcat(pseudoArguments, "$at,");
-                        strcat(pseudoArguments, arg2);
-                        strcat(pseudoArguments, arg1);
-
-                        *isSecondInstruction = true;
-                    }
-
-                    strcpy(arguments, pseudoArguments);
-                    break;
-                
-                case BGE:
-                    if(*isSecondInstruction){
-                        strcpy(opmne, "beq");
-                        sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
-
-                        strcat(pseudoArguments, "$at,$0,");
-                        bool isValid = false;
-                        for(int i = 0; i < labelCount; i++){
-                            if(!strcmp(arg3, labels[i].mnemonic)){
-                                strcat(pseudoArguments, labels[i].mnemonic);
-                                isValid = true;
-                                break;
-                            }
-                        }
-                        if(!isValid){
-                            printf("Error: label '%s' not found.\n", arg3);
-                            exit(EXIT_FAILURE);
-                        }
-                    }
-                    else{
-                        strcpy(opmne, "slt");
-                        sscanf(arguments, "%[^,],%[^,],%[^,]", arg1, arg2, arg3);
-
-                        strcat(pseudoArguments, "$at,");
-                        strcat(pseudoArguments, arg1);
-                        strcat(pseudoArguments, arg2);
-
-                        *isSecondInstruction = true;
-                    }
-
-                    strcpy(arguments, pseudoArguments);
-                    break;
-
-                default:
-                    
-                    break;
+        bool isPseudo = false;
+        for(unsigned pseudoOp = 0; pseudoOp < pseudoOpsCount; pseudoOp++){
+            if(!strcmp(opmne, pseudoOps[pseudoOp])){
+                procPseudo(arguments, processedCode, pseudoOp, count);
+                isPseudo = true;
             }
         }
+        if(!isPseudo){
+            strcpy(processedCode[*count], opmne);
+            strcat(processedCode[*count], " ");
+            strcat(processedCode[*count], arguments);
+        }
+        *count = *count + 1;
     }
 
-    char cleanLineBuf[BUF_SIZE_LINE] = "";
-    strcat(cleanLineBuf, opmne);
-    strcat(cleanLineBuf, " ");
-    strcat(cleanLineBuf, arguments);
-
-    strcpy(cleanLine, cleanLineBuf);
+    return processedCode;
 }
 
 void instructionParsing(char *line, Instruction *cur_inst){
@@ -839,37 +878,24 @@ void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsi
         exit(EXIT_FAILURE);
     }
 
-    // store every label in the labels array
     parseLabels(&codeSegment);
 
-    // store parsed instructions in the array
-    bool isSecondInstruction = false;
-    char **linePtr = codeSegment.start;
+    // store every label in the labels array
+    char **processedCode = preProcess(&codeSegment, instCount);
+    char line[BUF_SIZE_LINE];
 
-    // allocate memory for the instructions considering 
-    *instructions = (Instruction *)malloc(sizeof(Instruction) * (codeSegment.lineCount));
+    // allocate memory for instructions array
+    *instructions = (Instruction *)malloc(sizeof(Instruction) * (*instCount));
     Instruction *cur_inst = *instructions;
-    char cleanLine[BUF_SIZE_LINE];
 
-    for(int i = 0; linePtr < codeSegment.end; linePtr++, cur_inst++, i++){
-        preProcess(*linePtr, cleanLine, &isSecondInstruction);
+    for(unsigned i = 0; i < *instCount; i++, cur_inst++){
         cur_inst->index = i + 1;
-        instructionParsing(cleanLine, cur_inst);
-        if(isSecondInstruction){
-            codeSegment.lineCount++;
-            i++;
-            
-            Instruction *newInstructions = (Instruction *)realloc(*instructions, codeSegment.lineCount * sizeof(Instruction));
-            *instructions = newInstructions;
-
-            cur_inst = *instructions + i;
-            preProcess(*linePtr, cleanLine, &isSecondInstruction);
-            cur_inst->index = i + 1;
-            instructionParsing(cleanLine, cur_inst);
-
-            isSecondInstruction = false;
-        }
+        strcpy(line, processedCode[i]);
+        instructionParsing(line, cur_inst);
     }
 
-    *instCount = codeSegment.lineCount;
+    for(unsigned i = 0; i < *instCount; i++){
+        free(processedCode[i]);
+    }
+    free(processedCode);
 }

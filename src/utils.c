@@ -1,5 +1,11 @@
 #include "../include/utils.h"
 
+void printStrings(char **arr, unsigned count){
+    for(unsigned i = 0; i < count; i++){
+        printf("%s\n", arr[i]);
+    }
+}
+
 int16_t strToInt16t(const char *str){
     char *endptr;
     long val = strtol(str, &endptr, 10);
@@ -78,7 +84,7 @@ bool checkEmptyString(const char *str){
     return true;
 }
 
-char** stringMalloc(unsigned size){
+char** stringArrayMalloc(unsigned size){
     char **str = (char **)malloc(size * sizeof(char*));
     for(unsigned i = 0; i < size; i++){
         str[i] = (char *)malloc((BUF_SIZE_LINE+1) * sizeof(char));

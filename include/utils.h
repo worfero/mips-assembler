@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+void printStrings(char **arr, unsigned count);
+
 int16_t strToInt16t(const char *str);
 
 void removeSpaces (char* str_trimmed, const char* str_untrimmed);
@@ -21,6 +23,6 @@ void removeElement(char **array, int sizeOfArray, int indexToRemove);
 
 bool checkEmptyString(const char *str);
 
-char** stringMalloc(unsigned size);
+char** stringArrayMalloc(unsigned size);
 
 #endif
