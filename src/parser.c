@@ -524,9 +524,9 @@ void jTypeParsing(char *arguments, Instruction *parsedInst){
 }
 
 void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsigned *index){
-    char arg1[10];
-    char arg2[10];
-    char arg3[10];
+    char arg1[32];
+    char arg2[32];
+    char arg3[32];
     char pseudoArguments[100] = "";
 
     switch(pseudoOp){
@@ -643,6 +643,7 @@ void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsign
 
             strcat(pseudoArguments, "$at,");
             strcat(pseudoArguments, arg1);
+            strcat(pseudoArguments, ",");
             strcat(pseudoArguments, arg2);
 
             strcpy(processedCode[*index], "slt ");
@@ -678,6 +679,7 @@ void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsign
 
             strcat(pseudoArguments, "$at,");
             strcat(pseudoArguments, arg2);
+            strcat(pseudoArguments, ",");
             strcat(pseudoArguments, arg1);
 
             strcpy(processedCode[*index], "slt ");
@@ -713,6 +715,7 @@ void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsign
 
             strcat(pseudoArguments, "$at,");
             strcat(pseudoArguments, arg2);
+            strcat(pseudoArguments, ",");
             strcat(pseudoArguments, arg1);
 
             strcpy(processedCode[*index], "slt ");
@@ -748,6 +751,7 @@ void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsign
 
             strcat(pseudoArguments, "$at,");
             strcat(pseudoArguments, arg1);
+            strcat(pseudoArguments, ",");
             strcat(pseudoArguments, arg2);
 
             strcpy(processedCode[*index], "slt ");
@@ -827,6 +831,7 @@ char **preProcess(Segment *codeSegment, unsigned *count){
 }
 
 void instructionParsing(char *line, Instruction *cur_inst){
+    printf("Instruction: %s\n\n", line);
     // opcode mnemonic for opcode identification
     char opmne[10] = "";
     // instruction arguments
