@@ -342,6 +342,7 @@ void parseLabels(Segment *codeSegment){
         if(ptr != NULL){
             char beforeLabel[BUF_SIZE_LINE];
             char *afterLabel;
+            unsigned index;
             
             strcpy(beforeLabel, *linePtr);
             strtok_r(beforeLabel, ":", &afterLabel);
@@ -349,7 +350,7 @@ void parseLabels(Segment *codeSegment){
 
             // if it's not in the same line, left shift all elements ahead and decrease ending pointer
             if(checkEmptyString(afterLabel)){
-                int index = linePtr - codeSegment->start;
+                index = linePtr - codeSegment->start;
                 removeElement(codeSegment->start, codeSegment->lineCount, index);
                 codeSegment->end = codeSegment->end - 1;
                 codeSegment->lineCount = codeSegment->lineCount - 1;
@@ -365,11 +366,11 @@ void parseLabels(Segment *codeSegment){
                 free(*linePtr);
                 *linePtr = newPtr;
 
-                unsigned index = linePtr - codeSegment->start;
-                labels[labelIdx].index = index;
+                index = linePtr - codeSegment->start;
             }
-            // saves label mnemonic
+            // saves label
             strcpy(labels[labelIdx].mnemonic, beforeLabel);
+            labels[labelIdx].index = index;
 
             labelIdx++;
         }
@@ -543,12 +544,47 @@ void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsign
 
         case LI: {
             sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
-            strcat(pseudoArguments, arg1);
-            strcat(pseudoArguments, ",$0,");
-            strcat(pseudoArguments, arg2);
 
-            strcpy(processedCode[*index], "ori ");
-            strcat(processedCode[*index], pseudoArguments);
+            // check if the immediate fits an int16 number to decide whether addiu or ori will be used
+            int32_t immArg = strToInt32t(arg2);
+            if(immArg > INT16_MIN && immArg < INT16_MAX){
+                strcpy(processedCode[*index], "addiu "); 
+
+                strcpy(pseudoArguments, arg1);
+                strcat(pseudoArguments, ",$0,");
+                strcat(pseudoArguments, arg2);
+
+                strcat(processedCode[*index], pseudoArguments);     
+            }
+            else{
+                // first instruction
+                int16_t upper16 = getUpper16Bits(immArg);
+                char upper16String[MAX_DIGITS_32BIT];
+                sprintf(upper16String, "%u", upper16);
+
+                strcpy(processedCode[*index], "lui "); 
+
+                strcpy(pseudoArguments, "$at,");
+                strcat(pseudoArguments, upper16String);
+
+                strcat(processedCode[*index], pseudoArguments);
+
+                *index = *index + 1;
+
+                // second instruction
+                int16_t lower16 = getLower16Bits(immArg);
+                char lower16String[MAX_DIGITS_32BIT];
+                sprintf(lower16String, "%u", lower16);
+
+                strcpy(processedCode[*index], "ori ");
+
+                strcpy(pseudoArguments, arg1);
+                strcat(pseudoArguments, ",$at,");
+                strcat(pseudoArguments, lower16String);
+                
+                strcat(processedCode[*index], pseudoArguments);
+            }
+
             break;
         }
 
@@ -557,7 +593,7 @@ void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsign
                 // first instruction
                 sscanf(arguments, "%[^,],%[^,]", arg1, arg2);
 
-                char dataMemAddr[10];
+                char dataMemAddr[MAX_DIGITS_32BIT];
                 sprintf(dataMemAddr, "%u", (int16_t)(MIPS_DATA_ADDR >> 16));
                 
                 strcat(pseudoArguments, "$at,");
@@ -831,7 +867,6 @@ char **preProcess(Segment *codeSegment, unsigned *count){
 }
 
 void instructionParsing(char *line, Instruction *cur_inst){
-    printf("Instruction: %s\n\n", line);
     // opcode mnemonic for opcode identification
     char opmne[10] = "";
     // instruction arguments

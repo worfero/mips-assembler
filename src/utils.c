@@ -6,6 +6,14 @@ void printStrings(char **arr, unsigned count){
     }
 }
 
+int16_t getUpper16Bits(int32_t num){
+    return (uint16_t)(num >> 16);
+}
+
+int16_t getLower16Bits(int32_t num){
+    return (uint16_t)(num & 0xFFFF);
+}
+
 int16_t strToInt16t(const char *str){
     char *endptr;
     long val = strtol(str, &endptr, 10);
@@ -22,6 +30,24 @@ int16_t strToInt16t(const char *str){
     }
 
     return (int16_t)val;
+}
+
+int32_t strToInt32t(const char *str){
+    char *endptr;
+    long val = strtol(str, &endptr, 10);
+
+    if (endptr == str){
+        printf("Error: variable is not a number");
+        exit(EXIT_FAILURE);
+    }
+
+    while (*endptr != '\0') {
+        if (!isspace((unsigned char)*endptr))
+            perror("Error: variable is not a number");
+        endptr++;
+    }
+
+    return (int32_t)val;
 }
 
 void removeSpaces(char* str_trimmed, const char* str_untrimmed){

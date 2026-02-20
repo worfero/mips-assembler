@@ -7,14 +7,15 @@ w2:     .word   0
 .text
 main:
     # Load immediates / addresses
+    li   $t0, 100000000
     li   $t0, 10
     li   $t1, 3
     la   $t2, w1
 
     # Load from memory
     lw   $t3, 0($t2)      # t3 = w1
-    lb   $t4, b1
-    lh   $t5, h1
+    #lb   $t4, b1
+    #lh   $t5, h1
 
     # Arithmetic
     add  $t6, $t3, $t0

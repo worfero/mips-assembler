@@ -49,7 +49,7 @@ void printSegment(Segment segment);
 
 typedef struct {
     unsigned index;
-    char mnemonic[10];
+    char mnemonic[100];
 } Label;
 
 union Value{
