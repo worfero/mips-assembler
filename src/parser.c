@@ -331,6 +331,44 @@ void parseData(Segment dataSegment){
     varCount = varIndex;
 }
 
+char *checkLabels(char ***linePtr, unsigned index){
+    char *line = **linePtr;
+    // checks if instruction has a label
+    char *ptr;
+    ptr = strchr(line, ':');
+    if(ptr != NULL){
+        char beforeCollon[BUF_SIZE_LINE];
+        char *afterCollon;
+
+        strcpy(beforeCollon, line);
+        strtok_r(beforeCollon, ":", &afterCollon);
+        trimLeadingWhitespaces(afterCollon);
+
+        // if it's not in the same line, move the pointer to the next line
+        if(checkEmptyString(afterCollon)){
+            (*linePtr)++;
+            line = **linePtr;
+        }
+        // if it is, change the pointer to after the label (i.e the instruction)
+        else{
+            ptr++;
+            while(isspace(*ptr)){
+                ptr++;
+            }
+            char *newPtr = strdup(ptr);  // allocates new memory
+            free(line);
+            line = newPtr;
+        }
+        // saves label
+        strcpy(labels[labelCount].mnemonic, beforeCollon);
+        labels[labelCount].index = index;
+
+        labelCount++;
+    }
+
+    return line;
+}
+
 void parseLabels(Segment *codeSegment){
     // check for labels
     char **linePtr = codeSegment->start;
@@ -485,10 +523,18 @@ void iTypeParsing(char *arguments, Instruction *parsedInst){
                 parsedInst->rs = getRegister(field2);
             }
         }
-        for(unsigned i = 0; i < MAX_LABELS; i++){
+
+        bool isValid = false;
+        for(unsigned i = 0; i < labelCount; i++){
             if(!strcmp(labels[i].mnemonic, label)){
                 parsedInst->imm = (short)(labels[i].index - parsedInst->index);
+                isValid = true;
+                break;
             }
+        }
+        if(!isValid){
+            printf("'%s, %s, %s' Error: label '%s' not found.\n", field2, field3, label, label);
+            exit(EXIT_FAILURE);
         }
     }
     // in this range of opcodes, the instruction follows always the following pattern: "mnemonic rt, rs, immediate"
@@ -689,21 +735,8 @@ void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsign
             strcpy(pseudoArguments, "");
 
             // second instruction
-
             strcat(pseudoArguments, "$at,$0,");
-            bool isValid = false;
-            for(int i = 0; i < labelCount; i++){
-                if(!strcmp(arg3, labels[i].mnemonic)){
-                    strcat(pseudoArguments, labels[i].mnemonic);
-                    isValid = true;
-                    break;
-                }
-            }
-            if(!isValid){
-                printf("Error: label '%s' not found.\n", arg3);
-                exit(EXIT_FAILURE);
-            }
-
+            strcat(pseudoArguments, arg3);
             strcpy(processedCode[*index], "bne ");
             strcat(processedCode[*index], pseudoArguments);
             break;
@@ -725,21 +758,8 @@ void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsign
             strcpy(pseudoArguments, "");
 
             // second instruction
-
             strcat(pseudoArguments, "$at,$0,");
-            bool isValid = false;
-            for(int i = 0; i < labelCount; i++){
-                if(!strcmp(arg3, labels[i].mnemonic)){
-                    strcat(pseudoArguments, labels[i].mnemonic);
-                    isValid = true;
-                    break;
-                }
-            }
-            if(!isValid){
-                printf("Error: label '%s' not found.\n", arg3);
-                exit(EXIT_FAILURE);
-            }
-
+            strcat(pseudoArguments, arg3);
             strcpy(processedCode[*index], "beq ");
             strcat(processedCode[*index], pseudoArguments);
             break;
@@ -761,21 +781,8 @@ void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsign
             strcpy(pseudoArguments, "");
 
             // second instruction
-
             strcat(pseudoArguments, "$at,$0,");
-            bool isValid = false;
-            for(int i = 0; i < labelCount; i++){
-                if(!strcmp(arg3, labels[i].mnemonic)){
-                    strcat(pseudoArguments, labels[i].mnemonic);
-                    isValid = true;
-                    break;
-                }
-            }
-            if(!isValid){
-                printf("Error: label '%s' not found.\n", arg3);
-                exit(EXIT_FAILURE);
-            }
-
+            strcat(pseudoArguments, arg3);
             strcpy(processedCode[*index], "bne ");
             strcat(processedCode[*index], pseudoArguments);
             break;
@@ -797,21 +804,8 @@ void procPseudo(char *arguments, char **processedCode, unsigned pseudoOp, unsign
             strcpy(pseudoArguments, "");
 
             // second instruction
-
             strcat(pseudoArguments, "$at,$0,");
-            bool isValid = false;
-            for(int i = 0; i < labelCount; i++){
-                if(!strcmp(arg3, labels[i].mnemonic)){
-                    strcat(pseudoArguments, labels[i].mnemonic);
-                    isValid = true;
-                    break;
-                }
-            }
-            if(!isValid){
-                printf("Error: label '%s' not found.\n", arg3);
-                exit(EXIT_FAILURE);
-            }
-
+            strcat(pseudoArguments, arg3);
             strcpy(processedCode[*index], "beq ");
             strcat(processedCode[*index], pseudoArguments);
             break;
@@ -839,7 +833,8 @@ char **preProcess(Segment *codeSegment, unsigned *count){
 
     *count = 0;
     for(; linePtr < codeSegment->end; linePtr++){
-        line = *linePtr;
+        // check if there are any labels declared on the line, then return the clean, instruction-only line
+        line = checkLabels(&linePtr, *count);
         int argPos;
         // gets current instruction's opcode mnemonic and separate it from the rest of the instruction
         sscanf(line, "%9s %n", opmne, &argPos);
@@ -904,6 +899,8 @@ void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsi
     // find each segment of the code and get their respective pointers
     Segment dataSegment;
     Segment codeSegment;
+
+    labelCount = 0;
     
     dataSegment = findSegment(".data", msg, numberOfLines);
 
@@ -918,9 +915,7 @@ void parser(char **msg, Instruction **instructions, unsigned numberOfLines, unsi
         exit(EXIT_FAILURE);
     }
 
-    parseLabels(&codeSegment);
-
-    // store every label in the labels array
+    // pre-process code
     char **processedCode = preProcess(&codeSegment, instCount);
     char line[BUF_SIZE_LINE];
 

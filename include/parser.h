@@ -100,6 +100,8 @@ char **findStart(char *type, char **lines, unsigned numberOfLines);
 
 void parseData(Segment dataSegment);
 
+char *checkLabels(char ***linePtr, unsigned index);
+
 void parseLabels(Segment *codeSegments);
 
 byte getRegister(char *regMne);
